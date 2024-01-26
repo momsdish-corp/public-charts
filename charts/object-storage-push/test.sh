@@ -16,7 +16,7 @@ helm install minio bitnami/minio --version 13.2.1 \
 kubectl --namespace=minio wait --for=condition=ready pod --selector=app.kubernetes.io/name=minio --timeout=120s
 
 # Wait for the minio service to create the bucket
-sleep 5
+sleep 10
 
 # Helm apply the object-storage-push chart
 helm upgrade --install object-storage-push . \

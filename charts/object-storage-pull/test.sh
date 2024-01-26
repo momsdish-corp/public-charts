@@ -16,7 +16,7 @@ helm install minio bitnami/minio --version 13.2.1 \
 kubectl --namespace=minio wait --for=condition=ready pod --selector=app.kubernetes.io/name=minio --timeout=120s
 
 # Wait for the minio service to create the bucket
-sleep 5
+sleep 10
 
 # Upload some directory to the bucket before testing
 MINIO_POD="$(kubectl --namespace=minio get pods -l app.kubernetes.io/name=minio -o jsonpath="{.items[0].metadata.name}")"
@@ -39,7 +39,7 @@ helm upgrade --install object-storage-pull . \
   --set container.env.OBJECT_STORAGE_SOURCE="object-storage-pull"
 
 # Wait for the object-storage-pull pod to start
-sleep 5
+sleep 10
 
 # Show logs
 OBJECT_STORAGE_PULL_POD="$(kubectl --namespace=object-storage-pull get pods -l app.kubernetes.io/name=object-storage-pull -o jsonpath="{.items[0].metadata.name}")"
