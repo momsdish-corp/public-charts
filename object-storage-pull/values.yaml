@@ -1,0 +1,16 @@
+generateName: false
+recreateHelm: false
+container:
+  env: {}
+  #  env:
+  #    AWS_ACCESS_KEY_ID: ""
+  #    AWS_SECRET_ACCESS_KEY: ""
+  #    OBJECT_STORAGE_ENDPOINT: ""
+  #    OBJECT_STORAGE_BUCKET: ""
+  #    OBJECT_STORAGE_DIR: ""
+  #    OBJECT_STORAGE_SOURCE: ""
+  envBase64: {}
+# Seconds to wait keep the container running, to allow copying files
+waitSeconds: 1800
+# Do not enable in production
+noVerifySSL: false

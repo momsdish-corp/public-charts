@@ -1,0 +1,109 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ .Release.Name }}-pod{{- if .Values.generateName }}-{{ randAlphaNum 5 | nospace | lower }}{{- end }}"
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+  annotations:
+    # Trigger restart on file changes
+    checksum.templates.env-secret.yaml: {{ include (print $.Template.BasePath "/env-secret.yaml") . | sha256sum }}
+    # Force helm to recreate the pod on upgrade
+    checksum.helm.recreate: "{{- if .Values.recreateHelm }}{{ randAlphaNum 10 }}{{- end }}"
+spec:
+  activeDeadlineSeconds: {{ add .Values.waitSeconds 60 }}
+  containers:
+    - name: aws-cli
+      image: "bitnami/aws-cli:2"
+      envFrom:
+        - secretRef:
+            name: {{ .Release.Name }}-env-secret
+      env:
+        - name: NO_VERIFY_SSL
+          value: {{ .Values.noVerifySSL | quote }}
+      volumeMounts:
+        - name: {{ .Release.Name }}-pvc
+          mountPath: /files
+      command:
+        - bash
+        - '-c'
+        - |
+          set -e
+
+          # Functions
+          check_key() {
+            KEY_VALUE="$1"
+            KEY_NAME="$2"
+            if [ ! "$KEY_VALUE" ]; then
+              echo "Error! Secret key \"$KEY_NAME\" is not set."
+              exit 1
+            fi
+          }
+
+          # Require variables AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, OBJECT_STORAGE_ENDPOINT, OBJECT_STORAGE_BUCKET, OBJECT_STORAGE_DIR
+          check_key "$AWS_ACCESS_KEY_ID" "AWS_ACCESS_KEY_ID"
+          check_key "$AWS_SECRET_ACCESS_KEY" "AWS_SECRET_ACCESS_KEY"
+          check_key "$OBJECT_STORAGE_ENDPOINT" "OBJECT_STORAGE_ENDPOINT"
+          check_key "$OBJECT_STORAGE_BUCKET" "OBJECT_STORAGE_BUCKET"
+          check_key "$OBJECT_STORAGE_DIR" "OBJECT_STORAGE_DIR"
+
+          # NO_VERIFY_SSL
+          NO_VERIFY_SSL_FLAG=""
+          if [ "$NO_VERIFY_SSL" == "true" ]; then
+            echo "NO_VERIFY_SSL is set to true. Disabling SSL verification... This is not safe in production!"
+            NO_VERIFY_SSL_FLAG="--no-verify-ssl"
+          fi
+
+          # Validate values
+          ## If $OBJECT_STORAGE_ENDPOINT has a protocol, strip it out
+          if [[ "$OBJECT_STORAGE_ENDPOINT" == http* ]]; then
+            OBJECT_STORAGE_ENDPOINT="$(echo "$OBJECT_STORAGE_ENDPOINT" | sed -e 's~http[s]*://~~')"
+          fi
+
+          # GitHub Actions fix - Ref: https://github.com/aws/aws-cli/issues/5623#issuecomment-801240811
+          export AWS_EC2_METADATA_DISABLED=true
+
+          # Clear out any previously downloads
+          rm -rf "/files/*"
+
+          # Strip out any leading slashes /
+          OBJECT_STORAGE_DIR="${OBJECT_STORAGE_DIR#/}"
+          # Strip out any trailing slashes /
+          OBJECT_STORAGE_DIR="${OBJECT_STORAGE_DIR%/}"
+
+          # If the OBJECT_STORAGE_SOURCE is not set, get the latest file from .last-push
+          if [[ -z "$OBJECT_STORAGE_SOURCE" ]]; then
+            echo "Filename is not specified. Getting the last push from .last-push."
+            aws --endpoint-url="https://${OBJECT_STORAGE_ENDPOINT}" s3 cp "$NO_VERIFY_SSL_FLAG" "s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/.last-push" "/files"
+            OBJECT_STORAGE_SOURCE="$(test -f /files/.last-push && cat /files/.last-push)"
+            rm -f /files/.last-push
+            if [[ -z "$OBJECT_STORAGE_SOURCE" ]]; then
+              echo "Unable to get the last push from .last-push."
+              exit 1
+            fi
+          fi
+
+          # Cut out the YYYY/MM/ from the filename, if it exists
+          DESTINATION="$(echo "$OBJECT_STORAGE_SOURCE" | sed -e 's~^[0-9]\{4\}/[0-9]\{2\}/~~')"
+
+          # Download the filename from the object storage bucket
+          aws --endpoint-url="https://${OBJECT_STORAGE_ENDPOINT}" s3 cp "$NO_VERIFY_SSL_FLAG" --recursive "s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/${OBJECT_STORAGE_SOURCE}" "/files/${DESTINATION}"
+          echo "${DESTINATION}" > /files/.last-pull
+
+          echo "Downloaded the following files from object storage:"
+          ls -lah /files
+    # To allow copying of the files from the container to the local machine
+    - name: busybox
+      image: busybox:1
+      volumeMounts:
+        - name: {{ .Release.Name }}-pvc
+          mountPath: /files
+      command:
+        - sleep
+        - {{ .Values.waitSeconds | quote }}
+  restartPolicy: Never
+  volumes:
+    - name: {{ .Release.Name }}-pvc
+      emptyDir: {}
