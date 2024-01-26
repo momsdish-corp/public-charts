@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Delete branch after merge
-        if: ${{ github.event.pull_request.merged == true && github.head_ref != 'main' }}
+        if: ${{ github.event.pull_request.merged == true && github.head_ref != 'main' && github.head_ref != 'gh-pages' }}
         run: |
           curl -X DELETE \
           -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
