@@ -14,6 +14,16 @@ entries:
   object-storage-pull:
   - apiVersion: v2
     appVersion: 2.0.0
+    created: "2024-01-26T08:09:25.248372011Z"
+    description: A Helm chart for Kubernetes
+    digest: 55562b9364d4aa4174cff420b980e989d1b7fa69388fd890383b7ea0894efa83
+    name: object-storage-pull
+    type: application
+    urls:
+    - https://github.com/momsdish-corp/public-charts/releases/download/object-storage-pull-0.0.3/object-storage-pull-0.0.3.tgz
+    version: 0.0.3
+  - apiVersion: v2
+    appVersion: 2.0.0
     created: "2024-01-26T04:06:49.882042385Z"
     description: A Helm chart for Kubernetes
     digest: 8288b9231c1c4b5a0951a9d38fdeba802464c6242f9226d4054b2a41f2b0fe6b
@@ -25,6 +35,16 @@ entries:
   object-storage-push:
   - apiVersion: v2
     appVersion: 2.0.0
+    created: "2024-01-26T08:09:25.343285123Z"
+    description: A Helm chart for Kubernetes
+    digest: d2354fec612db9a70398edcac32932a0e0fd2f2bb630269916524a406b926f91
+    name: object-storage-push
+    type: application
+    urls:
+    - https://github.com/momsdish-corp/public-charts/releases/download/object-storage-push-0.0.3/object-storage-push-0.0.3.tgz
+    version: 0.0.3
+  - apiVersion: v2
+    appVersion: 2.0.0
     created: "2024-01-26T04:06:50.085881461Z"
     description: A Helm chart for Kubernetes
     digest: 2f2f599afedbf5a3ff6d8dafa39ed54e9c07c21877d0dfd374fb8347fbe6866c
@@ -33,4 +53,4 @@ entries:
     urls:
     - https://github.com/momsdish-corp/public-charts/releases/download/object-storage-push-0.0.2/object-storage-push-0.0.2.tgz
     version: 0.0.2
-generated: "2024-01-26T07:38:30.344724382Z"
+generated: "2024-01-26T08:09:25.343303507Z"
