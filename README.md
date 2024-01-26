@@ -2,7 +2,7 @@
 A collection of charts designed around the `linux/arm64` architecture.
 
 ## Caution!
-These charts are not production-ready, and may receive breaking changes. It's advised to clone or fork the repo to avoid any issues.
+Unless otherwise stated, these charts have not been vetted production-ready.
 
 ## Use Instructions
 
