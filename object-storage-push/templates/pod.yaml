@@ -1,0 +1,128 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ .Release.Name }}-pod{{- if .Values.generateName }}-{{ randAlphaNum 5 | nospace | lower }}{{- end }}"
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+  annotations:
+    # Trigger restart on file changes
+    checksum.templates.env-secret.yaml: {{ include (print $.Template.BasePath "/env-secret.yaml") . | sha256sum }}
+    # Force helm to recreate the pod on upgrade
+    checksum.helm.recreate: "{{- if .Values.recreateHelm }}{{ randAlphaNum 10 }}{{- end }}"
+spec:
+  activeDeadlineSeconds: {{ .Values.activeDeadlineSeconds }}
+  containers:
+    - name: aws-cli
+      image: "bitnami/aws-cli:2"
+      envFrom:
+        - secretRef:
+            name: {{ .Release.Name }}-env-secret
+      env:
+        - name: TIMEOUT_SECONDS
+          value: {{ .Values.activeDeadlineSeconds | quote }}
+        - name: NO_VERIFY_SSL
+          value: {{ .Values.noVerifySSL | quote }}
+      volumeMounts:
+        - name: {{ .Release.Name }}-pvc
+          mountPath: /files
+      command:
+        - bash
+        - '-c'
+        - |
+          set -e
+
+          # Functions
+          check_key() {
+            KEY_VALUE="$1"
+            KEY_NAME="$2"
+            if [ ! "$KEY_VALUE" ]; then
+              echo "Error! Secret key \"$KEY_NAME\" is not set."
+              exit 1
+            fi
+          }
+
+          # Require variables AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, OBJECT_STORAGE_ENDPOINT, OBJECT_STORAGE_BUCKET, OBJECT_STORAGE_DIR
+          check_key "$AWS_ACCESS_KEY_ID" "AWS_ACCESS_KEY_ID"
+          check_key "$AWS_SECRET_ACCESS_KEY" "AWS_SECRET_ACCESS_KEY"
+          check_key "$OBJECT_STORAGE_ENDPOINT" "OBJECT_STORAGE_ENDPOINT"
+          check_key "$OBJECT_STORAGE_BUCKET" "OBJECT_STORAGE_BUCKET"
+          check_key "$OBJECT_STORAGE_DIR" "OBJECT_STORAGE_DIR"
+          check_key "$OBJECT_STORAGE_SOURCE" "OBJECT_STORAGE_SOURCE"
+
+          # Create the
+
+          # Wait for the file .ready to be created.
+          echo "Waiting for /files/.ready before proceeding... ($TIMEOUT_SECONDS second timeout)"
+          DATE_START="$(date +%s)"
+          while [ ! -f "/files/.ready" ]; do
+            DATE_NOW="$(date +%s)"
+            DIFF="$(( $DATE_NOW - $DATE_START ))"
+            if [ "$DIFF" -gt "$TIMEOUT_SECONDS" ]; then
+              echo "Error! Timeout waiting for /files/.ready"
+              exit 1
+            fi
+            sleep 1
+          done
+
+          if [ ! -f "/files/.ready" ]; then
+            echo "Error! Timeout waiting for /files/.ready"
+            exit 1
+          fi
+
+          # Remove the .ready file
+          rm -f "/files/.ready"
+
+          # Check if the file or directory exists
+          if [ ! -f "/files/$OBJECT_STORAGE_SOURCE" ] && [ ! -d "/files/$OBJECT_STORAGE_SOURCE" ]; then
+            echo "Error! Path /files/$OBJECT_STORAGE_SOURCE does not exist."
+            exit 1
+          fi
+
+          # Make SUBDIR YYYY/MM
+          SUBDIR="$(date +%Y)/$(date +%m)"
+
+          if [ -f "/files/${OBJECT_STORAGE_SOURCE}" ]; then
+            echo "Uploading ${OBJECT_STORAGE_SOURCE} to s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/$SUBDIR object storage..."
+          else
+            echo "Uploading the following files to s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/$SUBDIR/${OBJECT_STORAGE_SOURCE} object storage..."
+            ls -la /files/${OBJECT_STORAGE_SOURCE}
+          fi
+
+          # Validate values
+          ## If $OBJECT_STORAGE_ENDPOINT has a protocol, strip it out
+          if [[ "$OBJECT_STORAGE_ENDPOINT" == http* ]]; then
+            OBJECT_STORAGE_ENDPOINT="$(echo "$OBJECT_STORAGE_ENDPOINT" | sed -e 's~http[s]*://~~')"
+          fi
+
+          # GitHub Actions fix - Ref: https://github.com/aws/aws-cli/issues/5623#issuecomment-801240811
+          export AWS_EC2_METADATA_DISABLED=true
+
+          # Strip out any leading slashes /
+          OBJECT_STORAGE_DIR="${OBJECT_STORAGE_DIR#/}"
+          # Strip out any trailing slashes /
+          OBJECT_STORAGE_DIR="${OBJECT_STORAGE_DIR%/}"
+
+          echo "${SUBDIR}/${OBJECT_STORAGE_SOURCE}" > "/files/.last-push"
+
+          # NO_VERIFY_SSL
+          NO_VERIFY_SSL_FLAG=""
+          if [ "$NO_VERIFY_SSL" == "true" ]; then
+            echo "NO_VERIFY_SSL is set to true. Disabling SSL verification... This is not safe in production!"
+            NO_VERIFY_SSL_FLAG="--no-verify-ssl"
+          fi
+
+          # Upload the source to the object storage bucket
+          echo "Uploading to object storage..."
+          aws --endpoint-url="https://${OBJECT_STORAGE_ENDPOINT}" s3 cp "$NO_VERIFY_SSL_FLAG" --recursive "/files/${OBJECT_STORAGE_SOURCE}" "s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/$SUBDIR/${OBJECT_STORAGE_SOURCE}"
+          # Update .last-push file with the source
+          echo "Updating .last-push file with the source..."
+          aws --endpoint-url="https://${OBJECT_STORAGE_ENDPOINT}" s3 cp "$NO_VERIFY_SSL_FLAG" "/files/.last-push" "s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/"
+
+          echo "Upload complete."
+  restartPolicy: Never
+  volumes:
+    - name: {{ .Release.Name }}-pvc
+      emptyDir: {}
