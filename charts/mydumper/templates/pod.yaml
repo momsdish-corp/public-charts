@@ -1,0 +1,25 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ .Release.Name }}-pod{{- if .Values.generateName }}-{{ randAlphaNum 5 | nospace | lower }}{{- end }}"
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/name: mydumper
+  annotations:
+    # Trigger restart on file changes
+    checksum.templates.env-secret.yaml: {{ include (print $.Template.BasePath "/env-secret.yaml") . | sha256sum }}
+    # Force helm to recreate the pod on upgrade
+    checksum.helm.recreate: "{{- if .Values.recreateHelm }}{{ randAlphaNum 10 }}{{- end }}"
+spec:
+  containers:
+    - name: mydumper
+      image: "ghcr.io/momsdish-corp/public-containers:mydumper-0.15.2"
+      envFrom:
+        - secretRef:
+            name: {{ .Release.Name }}-env-secret
+      args:
+        - sleep
+        - {{ .Values.waitSeconds | quote }}
+  restartPolicy: Never

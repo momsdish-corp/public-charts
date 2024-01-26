@@ -1,0 +1,14 @@
+generateName: false
+recreateHelm: false
+
+container:
+  env:
+    MYSQL_HOSTNAME: ""
+    MYSQL_PORT: ""
+    MYSQL_USER: ""
+#    MYSQL_PASSWORD: ""
+    MYSQL_DATABASE: ""
+    VERBOSE: 2
+  envBase64: ""
+# Seconds to wait keep the container running, to allow copying files in/out of container
+waitSeconds: 1800
