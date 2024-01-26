@@ -15,11 +15,14 @@ helm install minio bitnami/minio --version 13.2.1 \
 # Wait for the minio pod to be ready
 kubectl --namespace=minio wait --for=condition=ready pod --selector=app.kubernetes.io/name=minio --timeout=120s
 
+# Wait for the minio service to create the bucket
+sleep 5
+
 # Helm apply the object-storage-push chart
 helm upgrade --install object-storage-push . \
   --namespace=object-storage-push \
   --create-namespace \
-  --set activeDeadlineSeconds=120 \
+  --set waitSeconds=120 \
   --set noVerifySSL=true \
   --set container.env.AWS_ACCESS_KEY_ID=root \
   --set container.env.AWS_SECRET_ACCESS_KEY=password \
@@ -32,10 +35,10 @@ helm upgrade --install object-storage-push . \
 kubectl --namespace=object-storage-push wait --for=condition=ready pod --selector=app.kubernetes.io/name=object-storage-push --timeout=120s
 
 # Copy the object-storage-push directory to the object-storage-push pod
-POD="$(kubectl --namespace=object-storage-push get pods -l app.kubernetes.io/name=object-storage-push -o jsonpath="{.items[0].metadata.name}")"
-kubectl --namespace=object-storage-push cp ../object-storage-push "$POD":/files
+OBJECT_STORAGE_PUSH_POD="$(kubectl --namespace=object-storage-push get pods -l app.kubernetes.io/name=object-storage-push -o jsonpath="{.items[0].metadata.name}")"
+kubectl --namespace=object-storage-push cp ../object-storage-push "$OBJECT_STORAGE_PUSH_POD":/files
 
 # Mark it as ready
-kubectl --namespace=object-storage-push exec "$POD" -- touch /files/.ready
+kubectl --namespace=object-storage-push exec "$OBJECT_STORAGE_PUSH_POD" -- touch /files/.ready
 # Show logs
-kubectl --namespace=object-storage-push logs -f "$POD" --follow
+kubectl --namespace=object-storage-push logs "$OBJECT_STORAGE_PUSH_POD" --container aws-cli --follow

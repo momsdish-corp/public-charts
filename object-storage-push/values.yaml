@@ -10,7 +10,7 @@ container:
 #    OBJECT_STORAGE_DIR: ""
 #    OBJECT_STORAGE_SOURCE: ""
   envBase64: {}
-# Seconds to wait before deleting the pod
-activeDeadlineSeconds: 1800
+# Seconds to wait for the files to be uploaded
+waitSeconds: 1800
 # Do not enable in production
 noVerifySSL: false

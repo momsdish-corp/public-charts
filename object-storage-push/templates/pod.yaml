@@ -13,7 +13,7 @@ metadata:
     # Force helm to recreate the pod on upgrade
     checksum.helm.recreate: "{{- if .Values.recreateHelm }}{{ randAlphaNum 10 }}{{- end }}"
 spec:
-  activeDeadlineSeconds: {{ .Values.activeDeadlineSeconds }}
+  activeDeadlineSeconds: {{ add .Values.waitSeconds 60 }}
   containers:
     - name: aws-cli
       image: "bitnami/aws-cli:2"
@@ -21,8 +21,8 @@ spec:
         - secretRef:
             name: {{ .Release.Name }}-env-secret
       env:
-        - name: TIMEOUT_SECONDS
-          value: {{ .Values.activeDeadlineSeconds | quote }}
+        - name: WAIT_SECONDS
+          value: {{ .Values.waitSeconds | quote }}
         - name: NO_VERIFY_SSL
           value: {{ .Values.noVerifySSL | quote }}
       volumeMounts:
@@ -52,15 +52,20 @@ spec:
           check_key "$OBJECT_STORAGE_DIR" "OBJECT_STORAGE_DIR"
           check_key "$OBJECT_STORAGE_SOURCE" "OBJECT_STORAGE_SOURCE"
 
-          # Create the
+          # NO_VERIFY_SSL
+          NO_VERIFY_SSL_FLAG=""
+          if [ "$NO_VERIFY_SSL" == "true" ]; then
+            echo "NO_VERIFY_SSL is set to true. Disabling SSL verification... This is not safe in production!"
+            NO_VERIFY_SSL_FLAG="--no-verify-ssl"
+          fi
 
           # Wait for the file .ready to be created.
-          echo "Waiting for /files/.ready before proceeding... ($TIMEOUT_SECONDS second timeout)"
+          echo "Waiting for /files/.ready before proceeding... ($WAIT_SECONDS second timeout)"
           DATE_START="$(date +%s)"
           while [ ! -f "/files/.ready" ]; do
             DATE_NOW="$(date +%s)"
             DIFF="$(( $DATE_NOW - $DATE_START ))"
-            if [ "$DIFF" -gt "$TIMEOUT_SECONDS" ]; then
+            if [ "$DIFF" -gt "$WAIT_SECONDS" ]; then
               echo "Error! Timeout waiting for /files/.ready"
               exit 1
             fi
@@ -106,13 +111,6 @@ spec:
           OBJECT_STORAGE_DIR="${OBJECT_STORAGE_DIR%/}"
 
           echo "${SUBDIR}/${OBJECT_STORAGE_SOURCE}" > "/files/.last-push"
-
-          # NO_VERIFY_SSL
-          NO_VERIFY_SSL_FLAG=""
-          if [ "$NO_VERIFY_SSL" == "true" ]; then
-            echo "NO_VERIFY_SSL is set to true. Disabling SSL verification... This is not safe in production!"
-            NO_VERIFY_SSL_FLAG="--no-verify-ssl"
-          fi
 
           # Upload the source to the object storage bucket
           echo "Uploading to object storage..."
