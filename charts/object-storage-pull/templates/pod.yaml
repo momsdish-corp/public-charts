@@ -49,13 +49,6 @@ spec:
           check_key "$OBJECT_STORAGE_BUCKET" "OBJECT_STORAGE_BUCKET"
           check_key "$OBJECT_STORAGE_DIR" "OBJECT_STORAGE_DIR"
 
-          # NO_VERIFY_SSL
-          NO_VERIFY_SSL_FLAG=""
-          if [ "$NO_VERIFY_SSL" == "true" ]; then
-            echo "NO_VERIFY_SSL is set to true. Disabling SSL verification... This is not safe in production!"
-            NO_VERIFY_SSL_FLAG="--no-verify-ssl"
-          fi
-
           # Validate values
           ## If $OBJECT_STORAGE_ENDPOINT has a protocol, strip it out
           if [[ "$OBJECT_STORAGE_ENDPOINT" == http* ]]; then
@@ -76,7 +69,11 @@ spec:
           # If the OBJECT_STORAGE_SOURCE is not set, get the latest file from .last-push
           if [[ -z "$OBJECT_STORAGE_SOURCE" ]]; then
             echo "Filename is not specified. Getting the last push from .last-push."
-            aws --endpoint-url="https://${OBJECT_STORAGE_ENDPOINT}" s3 cp "$NO_VERIFY_SSL_FLAG" "s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/.last-push" "/files"
+            if [ "$NO_VERIFY_SSL" == "true" ]; then
+              aws --endpoint-url="https://${OBJECT_STORAGE_ENDPOINT}" s3 cp --no-verify-ssl "s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/.last-push" "/files"
+            else
+              aws --endpoint-url="https://${OBJECT_STORAGE_ENDPOINT}" s3 cp "s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/.last-push" "/files"
+            fi
             OBJECT_STORAGE_SOURCE="$(test -f /files/.last-push && cat /files/.last-push)"
             rm -f /files/.last-push
             if [[ -z "$OBJECT_STORAGE_SOURCE" ]]; then
@@ -89,7 +86,11 @@ spec:
           DESTINATION="$(echo "$OBJECT_STORAGE_SOURCE" | sed -e 's~^[0-9]\{4\}/[0-9]\{2\}/~~')"
 
           # Download the filename from the object storage bucket
-          aws --endpoint-url="https://${OBJECT_STORAGE_ENDPOINT}" s3 cp "$NO_VERIFY_SSL_FLAG" --recursive "s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/${OBJECT_STORAGE_SOURCE}" "/files/${DESTINATION}"
+          if [ "$NO_VERIFY_SSL" == "true" ]; then
+            aws --endpoint-url="https://${OBJECT_STORAGE_ENDPOINT}" s3 cp --no-verify-ssl --recursive "s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/${OBJECT_STORAGE_SOURCE}" "/files/${DESTINATION}"
+          else
+            aws --endpoint-url="https://${OBJECT_STORAGE_ENDPOINT}" s3 cp --recursive "s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/${OBJECT_STORAGE_SOURCE}" "/files/${DESTINATION}"
+          fi
           echo "${DESTINATION}" > /files/.last-pull
 
           echo "Downloaded the following files from object storage:"

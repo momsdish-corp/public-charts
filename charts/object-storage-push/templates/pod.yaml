@@ -52,13 +52,6 @@ spec:
           check_key "$OBJECT_STORAGE_DIR" "OBJECT_STORAGE_DIR"
           check_key "$OBJECT_STORAGE_SOURCE" "OBJECT_STORAGE_SOURCE"
 
-          # NO_VERIFY_SSL
-          NO_VERIFY_SSL_FLAG=""
-          if [ "$NO_VERIFY_SSL" == "true" ]; then
-            echo "NO_VERIFY_SSL is set to true. Disabling SSL verification... This is not safe in production!"
-            NO_VERIFY_SSL_FLAG="--no-verify-ssl"
-          fi
-
           # Wait for the file .ready to be created.
           echo "Waiting for /files/.ready before proceeding... ($WAIT_SECONDS second timeout)"
           DATE_START="$(date +%s)"
@@ -114,11 +107,18 @@ spec:
 
           # Upload the source to the object storage bucket
           echo "Uploading to object storage..."
-          aws --endpoint-url="https://${OBJECT_STORAGE_ENDPOINT}" s3 cp "$NO_VERIFY_SSL_FLAG" --recursive "/files/${OBJECT_STORAGE_SOURCE}" "s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/$SUBDIR/${OBJECT_STORAGE_SOURCE}"
+          if [ "$NO_VERIFY_SSL" == "true" ]; then
+            aws --endpoint-url="https://${OBJECT_STORAGE_ENDPOINT}" s3 cp --no-verify-ssl --recursive "/files/${OBJECT_STORAGE_SOURCE}" "s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/$SUBDIR/${OBJECT_STORAGE_SOURCE}"
+          else
+            aws --endpoint-url="https://${OBJECT_STORAGE_ENDPOINT}" s3 cp --recursive "/files/${OBJECT_STORAGE_SOURCE}" "s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/$SUBDIR/${OBJECT_STORAGE_SOURCE}"
+          fi
           # Update .last-push file with the source
           echo "Updating .last-push file with the source..."
-          aws --endpoint-url="https://${OBJECT_STORAGE_ENDPOINT}" s3 cp "$NO_VERIFY_SSL_FLAG" "/files/.last-push" "s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/"
-
+          if [ "$NO_VERIFY_SSL" == "true" ]; then
+            aws --endpoint-url="https://${OBJECT_STORAGE_ENDPOINT}" s3 cp --no-verify-ssl "/files/.last-push" "s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/"
+          else
+            aws --endpoint-url="https://${OBJECT_STORAGE_ENDPOINT}" s3 cp "/files/.last-push" "s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/"
+          fi
           echo "Upload complete."
   restartPolicy: Never
   volumes:
