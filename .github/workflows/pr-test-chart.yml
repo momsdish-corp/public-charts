@@ -1,0 +1,88 @@
+name: 'Test Chart on Pull Request'
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+    paths-ignore:
+      - '.github/**'
+
+concurrency:
+  group: pull-request-${{ github.event.number }}
+  cancel-in-progress: true
+
+env:
+  K3S_VERSION: v1.28.5-k3s1
+
+jobs:
+  get-changed-containers:
+    timeout-minutes: 3
+    runs-on: ubuntu-22.04
+    outputs:
+      CHANGED_DIRS_JSON: ${{ steps.changed-dirs.outputs.CHANGED_DIRS_JSON }}
+
+    steps:
+      - name: Checkout files
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+
+      - name: Get list of changed directories
+        id: changed-dirs
+        run: |
+          # Get the changed directories, one per line, excluding .github
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...origin/${{ github.event.pull_request.head.ref }} ':!/.github/**')
+          CHANGED_DIRS=$(echo "$CHANGED_FILES" | awk -F/ 'NF>1{print $1}' | sort -u)
+          echo "Changed dirs: $CHANGED_DIRS"
+          
+          # Require no spaces in directory names
+          if [[ "$changed_dirs" =~ \  ]]; then
+            echo "ERROR: Directory names cannot contain spaces"
+            exit 1
+          fi
+                   
+          # Put each directory in a JSON array
+          if [ -z "$CHANGED_DIRS" ]; then
+            CHANGED_DIRS_JSON="[]"
+          else
+            CHANGED_DIRS_JSON=$(echo -e "$CHANGED_DIRS" | jq -R . | jq -cs .)
+          fi
+          echo "CHANGED_DIRS_JSON=$CHANGED_DIRS_JSON" >> $GITHUB_OUTPUT
+          echo "Changed dirs JSON: $CHANGED_DIRS_JSON"
+  test-chart:
+    if: ${{ needs.get-changed-containers.outputs.CHANGED_DIRS_JSON != '[]' }}
+    needs:
+      - get-changed-containers
+    runs-on: ubuntu-22.04
+    timeout-minutes: 6
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        CONTAINER_DIR: ${{ fromJson(needs.get-changed-containers.outputs.CHANGED_DIRS_JSON) }}
+    steps:
+      - name: Checkout files
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+      # Create a test k8s cluster
+      - name: Create a Test K8s Cluster (${{ env.K3S_VERSION }})
+        timeout-minutes: 2
+        uses: AbsaOSS/k3d-action@v2
+        with:
+          # Kubectl cluster & context name will be "k3d-test-cluster". K3d cluster name will be "test-cluster".
+          cluster-name: test-cluster
+          args: >-
+            --agents 1
+            --image docker.io/rancher/k3s:${{ env.K3S_VERSION }}
+      - name: Run the test script
+        run: |
+          cd ${{ matrix.CONTAINER_DIR }}
+          echo "Running test.sh"
+          ./test.sh
