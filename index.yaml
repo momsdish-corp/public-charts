@@ -1,5 +1,16 @@
 apiVersion: v1
 entries:
+  mydumper:
+  - apiVersion: v2
+    appVersion: 0.15.2
+    created: "2024-01-26T07:38:30.344715185Z"
+    description: A Helm chart for Kubernetes
+    digest: 4eb6f15cd47c49f6649c6856130cba980d6475afb8444e0d0ce264b34d1cde1f
+    name: mydumper
+    type: application
+    urls:
+    - https://github.com/momsdish-corp/public-charts/releases/download/mydumper-0.0.1/mydumper-0.0.1.tgz
+    version: 0.0.1
   object-storage-pull:
   - apiVersion: v2
     appVersion: 2.0.0
@@ -22,4 +33,4 @@ entries:
     urls:
     - https://github.com/momsdish-corp/public-charts/releases/download/object-storage-push-0.0.2/object-storage-push-0.0.2.tgz
     version: 0.0.2
-generated: "2024-01-26T04:06:50.085890729Z"
+generated: "2024-01-26T07:38:30.344724382Z"
