@@ -37,7 +37,7 @@ jobs:
         run: |
           # Get the changed directories, one per line, excluding .github
           CHANGED_FILES=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...origin/${{ github.event.pull_request.head.ref }} './charts/**')
-          CHANGED_DIRS=$(echo "$CHANGED_FILES" | awk -F/ 'NF>1{$NF=""; print $0}' | sort -u)
+          CHANGED_DIRS=$(echo "$CHANGED_FILES" | awk -F/ 'NF>1 {print $1"/"$2}' | sort -u)
           echo "Changed dirs: $CHANGED_DIRS"
           
           # Require no spaces in directory names
@@ -83,6 +83,6 @@ jobs:
             --image docker.io/rancher/k3s:${{ env.K3S_VERSION }}
       - name: Run the test script
         run: |
-          cd charts/${{ matrix.CONTAINER_DIR }}
+          cd ${{ matrix.CONTAINER_DIR }}
           echo "Running test.sh"
           ./test.sh
