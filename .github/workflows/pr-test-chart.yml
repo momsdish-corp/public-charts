@@ -83,6 +83,6 @@ jobs:
             --image docker.io/rancher/k3s:${{ env.K3S_VERSION }}
       - name: Run the test script
         run: |
-          cd charts/${{ matrix.CONTAINER_DIR }}
+          cd ${{ matrix.CONTAINER_DIR }}
           echo "Running test.sh"
           ./test.sh
