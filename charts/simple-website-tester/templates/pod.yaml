@@ -1,0 +1,33 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ .Release.Name }}-pod
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/name: simple-website-tester
+spec:
+  containers:
+    - name: simple-website-tester
+      image: ghcr.io/momsdish-corp/public-containers:htmlq-0.4.0
+      command: ["/mnt/entrypoint.sh"]
+      volumeMounts:
+        - name: {{ .Release.Name }}-cm
+          mountPath: /mnt/entrypoint.sh
+          subPath: entrypoint.sh
+        - name: {{ .Release.Name }}-plugins-cm
+          mountPath: /mnt/plugins
+  volumes:
+    - name: {{ .Release.Name }}-cm
+      configMap:
+          name: {{ .Release.Name }}-cm
+          items:
+            - key: entrypoint.sh
+              mode: 0555
+              path: entrypoint.sh
+    - name: {{ .Release.Name }}-plugins-cm
+      configMap:
+        name: {{ .Release.Name }}-plugins-cm
+        defaultMode: 0555
+  restartPolicy: Never
