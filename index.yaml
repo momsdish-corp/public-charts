@@ -74,4 +74,15 @@ entries:
     urls:
     - https://github.com/momsdish-corp/public-charts/releases/download/object-storage-push-0.0.2/object-storage-push-0.0.2.tgz
     version: 0.0.2
-generated: "2024-01-27T03:29:00.693162736Z"
+  simple-website-tester:
+  - apiVersion: v2
+    appVersion: 0.4.0
+    created: "2024-01-27T04:15:59.39944427Z"
+    description: A Helm chart for Kubernetes
+    digest: ba41de9c7bb896b49c9402c36366533dc04f75836992254ccab7073429f11362
+    name: simple-website-tester
+    type: application
+    urls:
+    - https://github.com/momsdish-corp/public-charts/releases/download/simple-website-tester-0.0.1/simple-website-tester-0.0.1.tgz
+    version: 0.0.1
+generated: "2024-01-27T04:15:59.399462965Z"
