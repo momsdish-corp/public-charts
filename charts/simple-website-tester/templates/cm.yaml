@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-cm
+  namespace: {{ .Release.Namespace | quote }}
+data:
+  entrypoint.sh: |
+    #!/bin/bash
+    set -e
+    # Need to wait to allow devspace.yaml script to catch up.
+    sleep 5
+    # PLUGIN - REQUIRE
+    # Ports .require* values to require.sh script
+    {{- range $require := .Values.require }}
+    /mnt/plugins/require.sh
+      {{- if $.Values.debug }} --debug{{- end }}
+      {{- if $require.path }} --url="{{ $.Values.website }}{{ $require.path }}"{{- end }}
+      {{- if $require.statusCode }} --status-code={{ $require.statusCode | quote }}{{- end }}
+      {{- if $require.redirectsTo }} --redirects-to="{{ $.Values.website }}{{ $require.redirectsTo }}"{{- end }}
+    {{- range $html := $require.html }}
+    /mnt/plugins/require.sh
+      {{- if $.Values.debug }} --debug{{- end }}
+      {{- if $require.path }} --url="{{ $.Values.website }}{{ $require.path }}"{{- end }}
+      {{- if $html.cssSelector }} --css-selector={{ $html.cssSelector | quote }}{{- end }}
+      {{- if $html.text }} --text={{ $html.text | quote }}{{- end }}
+    {{- end }}
+    {{- end }}
+    # PLUGIN - MY OTHER PLUGIN
+    # Put your plugin code here, and the script into the plugins folder.
