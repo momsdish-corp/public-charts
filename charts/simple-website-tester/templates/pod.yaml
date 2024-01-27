@@ -5,8 +5,8 @@ metadata:
   name: {{ .Release.Name }}-pod
   namespace: {{ .Release.Namespace | quote }}
   labels:
-    app.kubernetes.io/instance: {{ .Release.Name | quote }}
-    app.kubernetes.io/name: simple-website-tester
+    app.kubernetes.io/name: {{ .Release.Name | quote }}
+    app.kubernetes.io/instance: simple-website-tester
 spec:
   containers:
     - name: simple-website-tester

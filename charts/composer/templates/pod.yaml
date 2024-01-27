@@ -5,8 +5,8 @@ metadata:
   name: "{{ .Release.Name }}-pod{{- if .Values.generateName }}-{{ randAlphaNum 5 | nospace | lower }}{{- end }}"
   namespace: {{ .Release.Namespace | quote }}
   labels:
-    app.kubernetes.io/instance: {{ .Release.Name | quote }}
-    app.kubernetes.io/name: composer
+    app.kubernetes.io/name: {{ .Release.Name | quote }}
+    app.kubernetes.io/instance: composer
   annotations:
     # Force helm to recreate the pod on upgrade
     checksum.helm.recreate: "{{- if .Values.recreateHelm }}{{ randAlphaNum 10 }}{{- end }}"
