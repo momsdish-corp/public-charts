@@ -1,5 +1,16 @@
 apiVersion: v1
 entries:
+  composer:
+  - apiVersion: v2
+    appVersion: 2.0.0
+    created: "2024-01-27T03:29:00.693144031Z"
+    description: A Helm chart for Kubernetes
+    digest: 75d4eefce9722cc544e135e92297194d34a3d97ed08a9c027b946196b6d318a5
+    name: composer
+    type: application
+    urls:
+    - https://github.com/momsdish-corp/public-charts/releases/download/composer-0.0.1/composer-0.0.1.tgz
+    version: 0.0.1
   mydumper:
   - apiVersion: v2
     appVersion: 0.15.2
@@ -63,4 +74,4 @@ entries:
     urls:
     - https://github.com/momsdish-corp/public-charts/releases/download/object-storage-push-0.0.2/object-storage-push-0.0.2.tgz
     version: 0.0.2
-generated: "2024-01-27T03:15:12.397788084Z"
+generated: "2024-01-27T03:29:00.693162736Z"
