@@ -3,6 +3,16 @@ entries:
   composer:
   - apiVersion: v2
     appVersion: 2.0.0
+    created: "2024-01-27T05:43:24.548379229Z"
+    description: A Helm chart for Kubernetes
+    digest: 99c5a8a64dfbe19defbe9fe8edc3379b29863f3cb9b4234bdb898c091cbc8516
+    name: composer
+    type: application
+    urls:
+    - https://github.com/momsdish-corp/public-charts/releases/download/composer-0.0.2/composer-0.0.2.tgz
+    version: 0.0.2
+  - apiVersion: v2
+    appVersion: 2.0.0
     created: "2024-01-27T03:29:00.693144031Z"
     description: A Helm chart for Kubernetes
     digest: 75d4eefce9722cc544e135e92297194d34a3d97ed08a9c027b946196b6d318a5
@@ -12,6 +22,16 @@ entries:
     - https://github.com/momsdish-corp/public-charts/releases/download/composer-0.0.1/composer-0.0.1.tgz
     version: 0.0.1
   mydumper:
+  - apiVersion: v2
+    appVersion: 0.15.2
+    created: "2024-01-27T05:43:24.637006985Z"
+    description: A Helm chart for Kubernetes
+    digest: 7470ebdd6989975c43013ffb57fc3365d83e9c352f3bba3000cf6116d4b4368d
+    name: mydumper
+    type: application
+    urls:
+    - https://github.com/momsdish-corp/public-charts/releases/download/mydumper-0.0.3/mydumper-0.0.3.tgz
+    version: 0.0.3
   - apiVersion: v2
     appVersion: 0.15.2
     created: "2024-01-27T03:15:12.397740214Z"
@@ -35,6 +55,16 @@ entries:
   object-storage-pull:
   - apiVersion: v2
     appVersion: 2.0.0
+    created: "2024-01-27T05:43:24.738370008Z"
+    description: A Helm chart for Kubernetes
+    digest: 7e4e27db321255fd212344c94ceac9bdca4e2c8288416d8d9fefdaab9592e4ec
+    name: object-storage-pull
+    type: application
+    urls:
+    - https://github.com/momsdish-corp/public-charts/releases/download/object-storage-pull-0.0.4/object-storage-pull-0.0.4.tgz
+    version: 0.0.4
+  - apiVersion: v2
+    appVersion: 2.0.0
     created: "2024-01-26T08:09:25.248372011Z"
     description: A Helm chart for Kubernetes
     digest: 55562b9364d4aa4174cff420b980e989d1b7fa69388fd890383b7ea0894efa83
@@ -54,6 +84,16 @@ entries:
     - https://github.com/momsdish-corp/public-charts/releases/download/object-storage-pull-0.0.2/object-storage-pull-0.0.2.tgz
     version: 0.0.2
   object-storage-push:
+  - apiVersion: v2
+    appVersion: 2.0.0
+    created: "2024-01-27T05:43:24.83295619Z"
+    description: A Helm chart for Kubernetes
+    digest: 8694cbd34e7711e43b2c22c19d14597ad6e3edfb344ebcd56fe3dafe2b09d8df
+    name: object-storage-push
+    type: application
+    urls:
+    - https://github.com/momsdish-corp/public-charts/releases/download/object-storage-push-0.0.4/object-storage-push-0.0.4.tgz
+    version: 0.0.4
   - apiVersion: v2
     appVersion: 2.0.0
     created: "2024-01-26T08:09:25.343285123Z"
@@ -77,6 +117,16 @@ entries:
   simple-website-tester:
   - apiVersion: v2
     appVersion: 0.4.0
+    created: "2024-01-27T05:43:24.932970435Z"
+    description: A Helm chart for Kubernetes
+    digest: 5a2b07028d99537543ffb7667d9846dc68fb511ba1afe0b462ac69a795411b53
+    name: simple-website-tester
+    type: application
+    urls:
+    - https://github.com/momsdish-corp/public-charts/releases/download/simple-website-tester-0.0.2/simple-website-tester-0.0.2.tgz
+    version: 0.0.2
+  - apiVersion: v2
+    appVersion: 0.4.0
     created: "2024-01-27T04:15:59.39944427Z"
     description: A Helm chart for Kubernetes
     digest: ba41de9c7bb896b49c9402c36366533dc04f75836992254ccab7073429f11362
@@ -85,4 +135,4 @@ entries:
     urls:
     - https://github.com/momsdish-corp/public-charts/releases/download/simple-website-tester-0.0.1/simple-website-tester-0.0.1.tgz
     version: 0.0.1
-generated: "2024-01-27T04:15:59.399462965Z"
+generated: "2024-01-27T05:43:24.933013085Z"
