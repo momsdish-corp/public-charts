@@ -9,6 +9,9 @@ helm upgrade --install mariadb-dev . \
   --set persistence.size=1Gi
 
 # Wait for the pod to be ready
+MARIADB_DEV_POD="$(kubectl --namespace=mariadb-dev get pods -l app.kubernetes.io/name=mariadb-dev -o jsonpath="{.items[0].metadata.name}")"
+sleep 30
+kubectl --namespace=mariadb-dev logs "$MARIADB_DEV_POD" --container mariadb --follow
 kubectl --namespace=mariadb-dev wait --for=condition=ready pod --selector=app.kubernetes.io/instance=mariadb-dev --timeout=120s
 
 # Try running commands
