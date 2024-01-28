@@ -1,0 +1,119 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ .Release.Name }}-pod
+  namespace: {{ .Release.Namespace | quote }}
+  annotations:
+    {{- range $key, $value := .Values.annotations }}
+    {{- printf "%s: \"%v\"\n" $key $value | nindent 8 }}
+    {{- end }}
+    checksum.templates.env-secret.yaml: {{ include (print $.Template.BasePath "/env-secret.yaml") . | sha256sum }}
+  labels:
+    {{- range $key, $value := .Values.labels }}
+    {{- printf "%s: \"%v\"\n" $key $value | nindent 8 }}
+    {{- end }}
+    app.kubernetes.io/name: {{ .Release.Name }}
+    app.kubernetes.io/instance: mariadb-dev
+spec:
+  initContainers:
+    - name: volume-permissions
+      image: bitnami/os-shell:11
+      command:
+        - /bin/bash
+      args:
+        - -ec
+        - |
+          mkdir -p /bitnami/mariadb
+          # Suppress errors (Supports MacOS which uses 501:dialout)
+          chown --silent -R 1001:1001 /bitnami/mariadb >/dev/null 2>&1 || :
+      securityContext:
+        runAsUser: 0
+      volumeMounts:
+        - name: {{ .Release.Name }}-pv
+          mountPath: "/bitnami/mariadb"
+          {{- if .Values.persistence.subPath }}
+          subPath: {{ .Values.persistence.subPath }}
+          {{- end }}
+  containers:
+    - name: mariadb
+      image: "bitnami/mariadb:11.2.2"
+      envFrom:
+        - secretRef:
+            name: {{ .Release.Name }}-env-secret
+      resources:
+        requests:
+          cpu: {{ .Values.container.resources.requests.cpu }}
+          memory: {{ .Values.container.resources.requests.memory }}
+        limits:
+          cpu: {{ .Values.container.resources.limits.cpu }}
+          memory: {{ .Values.container.resources.limits.memory }}
+      ports:
+        - name: https
+          containerPort: 3306
+      startupProbe:
+        exec:
+          command:
+            - /bin/bash
+            - -ec
+            - |
+              password_aux="${MARIADB_ROOT_PASSWORD:-}"
+              if [[ -f "${MARIADB_ROOT_PASSWORD_FILE:-}" ]]; then
+                  password_aux=$(cat "$MARIADB_ROOT_PASSWORD_FILE")
+              fi
+              mysqladmin status -uroot -p"${password_aux}"
+        initialDelaySeconds: 30
+        periodSeconds: 10
+        timeoutSeconds: 5
+        failureThreshold: 60
+        successThreshold: 1
+      livenessProbe:
+        exec:
+          command:
+            - /bin/bash
+            - -ec
+            - |
+              password_aux="${MARIADB_ROOT_PASSWORD:-}"
+              if [[ -f "${MARIADB_ROOT_PASSWORD_FILE:-}" ]]; then
+                  password_aux=$(cat "$MARIADB_ROOT_PASSWORD_FILE")
+              fi
+              mysqladmin status -uroot -p"${password_aux}"
+        initialDelaySeconds: 30
+        periodSeconds: 10
+        timeoutSeconds: 5
+        failureThreshold: 3
+        successThreshold: 1
+      readinessProbe:
+        exec:
+          command:
+            - /bin/bash
+            - -ec
+            - |
+              password_aux="${MARIADB_ROOT_PASSWORD:-}"
+              if [[ -f "${MARIADB_ROOT_PASSWORD_FILE:-}" ]]; then
+                  password_aux=$(cat "$MARIADB_ROOT_PASSWORD_FILE")
+              fi
+              mysqladmin status -uroot -p"${password_aux}"
+        initialDelaySeconds: 5
+        periodSeconds: 10
+        timeoutSeconds: 1
+        failureThreshold: 3
+        successThreshold: 1
+      volumeMounts:
+        - name: {{ .Release.Name }}-pv
+          mountPath: "/bitnami/mariadb"
+          {{- if .Values.persistence.subPath }}
+          subPath: {{ .Values.persistence.subPath }}
+          {{- end }}
+  volumes:
+    - name: {{ .Release.Name }}-pv
+      {{- if and .Values.persistence.enabled .Values.persistence.local.enabled }}
+      hostPath:
+        path: {{ .Values.persistence.local.path }}
+        type: DirectoryOrCreate
+      {{- else if and .Values.persistence.enabled (not .Values.persistence.local.enabled) }}
+      persistentVolumeClaim:
+        claimName: {{ .Release.Name }}-pvc
+      {{- else }}
+      emptyDir: {}
+      {{- end }}
