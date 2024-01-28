@@ -14,7 +14,10 @@ metadata:
     {{- range $key, $value := .Values.annotations }}
     {{- printf "%s: \"%v\"\n" $key $value | nindent 8 }}
     {{- end }}
+    # Trigger restart on file changes
     checksum.templates.env-secret.yaml: {{ include (print $.Template.BasePath "/env-secret.yaml") . | sha256sum }}
+    # Force helm to recreate the pod on upgrade
+    checksum.helm.recreate: "{{- if .Values.recreateHelm }}{{ randAlphaNum 10 }}{{- end }}"
 spec:
   initContainers:
     - name: volume-permissions
