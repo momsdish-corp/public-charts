@@ -19,8 +19,8 @@ container:
 persistence:
   enabled: false
   local:
-    # Do not use in production!
-    enabled: true
+    # Do not enable in production!
+    enabled: false
     path: "/.devspace/volumes/mysql"
   subPath: "bitnami/mariadb"
   # The rest of the values are ignored if local.enabled is true
