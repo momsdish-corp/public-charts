@@ -1,6 +1,5 @@
 generateName: false
 recreateHelm: false
-waitSeconds: 1800
 annotations: {}
 labels: {}
 container:
