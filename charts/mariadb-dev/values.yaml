@@ -1,0 +1,29 @@
+generateName: false
+recreateHelm: false
+waitSeconds: 1800
+annotations: {}
+labels: {}
+container:
+  env:
+    MARIADB_ROOT_USER: "root"
+    # MARIADB_ROOT_PASSWORD
+    MARIADB_DATABASE: "example"
+  envBase64: {}
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+persistence:
+  enabled: false
+  local:
+    # Do not use in production!
+    enabled: true
+    path: "/.devspace/volumes/mysql"
+  subPath: "bitnami/mariadb"
+  # The rest of the values are ignored if local.enabled is true
+  storageClass: "local-path"
+  accessMode: "ReadWriteOnce"
+  size: 5Gi
