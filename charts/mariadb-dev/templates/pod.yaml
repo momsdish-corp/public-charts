@@ -54,7 +54,8 @@ spec:
       ports:
         - name: https
           containerPort: 3306
-      startupProbe:
+      {{- if .Values.container.startupProbe.enabled }}
+      startupProbe: {{- omit .Values.container.startupProbe "enabled" | toYaml | nindent 8 }}
         exec:
           command:
             - /bin/bash
@@ -65,12 +66,9 @@ spec:
                   password_aux=$(cat "$MARIADB_ROOT_PASSWORD_FILE")
               fi
               mysqladmin status -uroot -p"${password_aux}"
-        initialDelaySeconds: 30
-        periodSeconds: 10
-        timeoutSeconds: 5
-        failureThreshold: 60
-        successThreshold: 1
-      livenessProbe:
+      {{- end }}
+      {{- if .Values.container.livenessProbe.enabled }}
+      livenessProbe: {{- omit .Values.container.livenessProbe "enabled" | toYaml | nindent 8 }}
         exec:
           command:
             - /bin/bash
@@ -81,12 +79,9 @@ spec:
                   password_aux=$(cat "$MARIADB_ROOT_PASSWORD_FILE")
               fi
               mysqladmin status -uroot -p"${password_aux}"
-        initialDelaySeconds: 30
-        periodSeconds: 10
-        timeoutSeconds: 5
-        failureThreshold: 3
-        successThreshold: 1
-      readinessProbe:
+      {{- end }}
+      {{- if .Values.container.livenessProbe.enabled }}
+      readinessProbe: {{- omit .Values.container.readinessProbe "enabled" | toYaml | nindent 8 }}
         exec:
           command:
             - /bin/bash
@@ -97,11 +92,7 @@ spec:
                   password_aux=$(cat "$MARIADB_ROOT_PASSWORD_FILE")
               fi
               mysqladmin status -uroot -p"${password_aux}"
-        initialDelaySeconds: 5
-        periodSeconds: 10
-        timeoutSeconds: 1
-        failureThreshold: 3
-        successThreshold: 1
+      {{- end }}
       volumeMounts:
         - name: {{ .Release.Name }}-pv
           mountPath: "/bitnami/mariadb"
