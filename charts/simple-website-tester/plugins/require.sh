@@ -2,8 +2,6 @@
 
 set -e
 
-echo "### START $(dirname $0)/$(basename $0) ${@} ###"
-
 # Print usage
 print_usage() {
   echo "Ths script runs a test on a website."
@@ -216,5 +214,3 @@ elif [[ -n "$CSS_SELECTOR" ]]; then
 fi
 
 show_timer
-
-echo "### END $(dirname $0)/$(basename $0) ${@} ###"
