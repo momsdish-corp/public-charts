@@ -9,20 +9,29 @@ data:
     set -e
     # Need to wait to allow devspace.yaml script to catch up.
     sleep 5
+    # PLUGIN - RELOAD
+    # Ports .reload* values to reload.sh script
+    {{- if .Values.reload }}
+    {{- range $reload := .Values.reload }}
+    /mnt/plugins/reload.sh --wait-before-exit=2
+      {{- if $.Values.debug }} --debug{{- end }}
+      {{- if $reload.path }} --url="{{ $.Values.website }}{{ $reload.path }}"{{- end }}
+      {{- if $reload.count }} --count={{ $reload.count | quote }}{{- end }}
+      {{- if $reload.intervalSeconds }} --interval-seconds={{ $reload.intervalSeconds | quote }}{{- end }}
+    {{- end }}
+    {{- end }}
     # PLUGIN - REQUIRE
     # Ports .require* values to require.sh script
+    {{- if .Values.require }}
     {{- range $require := .Values.require }}
-    /mnt/plugins/require.sh --wait-before-exit=5
+    /mnt/plugins/require.sh --wait-before-exit=2
       {{- if $.Values.debug }} --debug{{- end }}
       {{- if $require.path }} --url="{{ $.Values.website }}{{ $require.path }}"{{- end }}
       {{- if $require.statusCode }} --status-code={{ $require.statusCode | quote }}{{- end }}
       {{- if $require.redirectsTo }} --redirects-to="{{ $.Values.website }}{{ $require.redirectsTo }}"{{- end }}
     {{- range $html := $require.html }}
-    /mnt/plugins/require.sh --wait-before-exit=5
-      {{- if $.Values.debug }} --debug{{- end }}
-      {{- if $require.path }} --url="{{ $.Values.website }}{{ $require.path }}"{{- end }}
-      {{- if $html.cssSelector }} --css-selector={{ $html.cssSelector | quote }}{{- end }}
-      {{- if $html.text }} --text={{ $html.text | quote }}{{- end }}
+      {{- if $html.cssSelector }} --css-selector="{{ $html.cssSelector }}{{- if $html.text }}:contains({{ $html.text }}){{- end }}"{{- end }}
+    {{- end }}
     {{- end }}
     {{- end }}
     # PLUGIN - MY OTHER PLUGIN
