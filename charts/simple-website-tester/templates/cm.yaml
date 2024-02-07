@@ -30,7 +30,7 @@ data:
       {{- if $require.statusCode }} --status-code={{ $require.statusCode | quote }}{{- end }}
       {{- if $require.redirectsTo }} --redirects-to="{{ $.Values.website }}{{ $require.redirectsTo }}"{{- end }}
     {{- range $html := $require.html }}
-      {{- if $html.cssSelector }} --css-selector="{{ $html.cssSelector }}{{- if $html.text }}:content({{ $html.text }}){{- end }}"{{- end }}
+      {{- if $html.cssSelector }} --css-selector="{{ $html.cssSelector }}{{- if $html.text }}:contains({{ $html.text }}){{- end }}"{{- end }}
     {{- end }}
     {{- end }}
     {{- end }}

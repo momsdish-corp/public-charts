@@ -32,7 +32,6 @@ while (( ${#} > 0 )); do
   shift
 done
 
-
 #################
 ### Functions ###
 #################
@@ -167,7 +166,6 @@ if [[ -n "$EXPECTING_CSS_SELECTOR" ]]; then
 
 		RETURNED_ELEMENT=$(echo "$RETURNED_HTML" | htmlq "$selector")
 		require_value --name="CSS selector ($selector)" --value="$RETURNED_ELEMENT"
-
 		if [[ -n "$text" ]]; then
 			RETURNED_ELEMENT_TEXT=$(echo "$RETURNED_HTML" | htmlq --text "$selector")
 			require_value_match --name="CSS selector ($selector) text" --value="$RETURNED_ELEMENT_TEXT" --match="$text"

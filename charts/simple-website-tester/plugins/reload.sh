@@ -10,6 +10,7 @@ print_usage() {
   echo "--url                (string) (required) URL to fetch"
   echo "--count							 (number) (optional) Number of times to reload. Default is 1."
   echo "--interval-seconds   (number) (optional) Interval in seconds between reloads. Default is 3 seconds."
+  echo "--wait-before-exit   (number) (optional) Wait time in seconds before exiting the script. Default is 0 seconds."
   echo "--debug                       (optional) Show debug/verbose output"
   echo "--help                                   Help"
 }
@@ -20,6 +21,7 @@ while (( ${#} > 0 )); do
     ( '--url='* ) URL="${1#*=}" ;;
   	( '--count='* ) COUNT="${1#*=}" ;;
 		( '--interval-seconds='* ) INTERVAL_SECONDS="${1#*=}" ;;
+		( '--wait-before-exit='* ) WAIT_BEFORE_EXIT="${1#*=}" ;;
   	( '--debug' ) DEBUG=1 ;;
     ( * ) print_usage
           exit 1;;
