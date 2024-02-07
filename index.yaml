@@ -168,6 +168,16 @@ entries:
   simple-website-tester:
   - apiVersion: v2
     appVersion: 0.4.0
+    created: "2024-02-07T07:42:01.318946538Z"
+    description: A Helm chart for Kubernetes
+    digest: 97d70c9a5e315116f276a34b68d5b9c1d9addc597a00f24511296faf1fbdae23
+    name: simple-website-tester
+    type: application
+    urls:
+    - https://github.com/momsdish-corp/public-charts/releases/download/simple-website-tester-1.0.2/simple-website-tester-1.0.2.tgz
+    version: 1.0.2
+  - apiVersion: v2
+    appVersion: 0.4.0
     created: "2024-02-07T03:52:41.402832669Z"
     description: A Helm chart for Kubernetes
     digest: 5970839362aa52c183e77ef7435ca62c3d52233fbc8d643eceeab2432e4bafec
@@ -216,4 +226,4 @@ entries:
     urls:
     - https://github.com/momsdish-corp/public-charts/releases/download/simple-website-tester-0.0.1/simple-website-tester-0.0.1.tgz
     version: 0.0.1
-generated: "2024-02-07T03:52:41.402878976Z"
+generated: "2024-02-07T07:42:01.318986091Z"
