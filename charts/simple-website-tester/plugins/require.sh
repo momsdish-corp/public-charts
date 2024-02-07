@@ -11,8 +11,7 @@ print_usage() {
   echo "--url                (string) (required) URL to fetch"
   echo "--status-code        (number) (optional) Expected status code. If --status-code and --redirects-to is not provided, it defaults to 200."
   echo "--redirects-to       (string) (optional) Full URL of the expected redirect."
-  echo "--css-selector       (string) (optional) CSS selector to require"
-  echo "--text               (string) (optional) Case-sensitive value to expect. Requires --css-selector."
+  echo "--css-selector       (string) (optional) CSS selector to require. Append :contains(text) to require a specific text. Allows for multiple selectors."
   echo "--wait-before-exit   (number) (optional) Wait time in seconds before exiting the script. Default is 0 seconds."
   echo "--debug                       (optional) Show debug/verbose output"
   echo "--help                                   Help"
@@ -24,8 +23,7 @@ while (( ${#} > 0 )); do
     ( '--url='* ) URL="${1#*=}" ;;
   	( '--status-code='* ) EXPECTING_STATUS_CODE="${1#*=}" ;;
     ( '--redirects-to='* ) EXPECTING_REDIRECTS_TO="${1#*=}" ;;
-    ( '--css-selector='* ) EXPECTING_CSS_SELECTOR="${1#*=}" ;;
-    ( '--text='* ) EXPECTING_TEXT="${1#*=}" ;;
+    ( '--css-selector='* ) EXPECTING_CSS_SELECTOR+=("${1#*=}") ;; # Store in an array
     ( '--wait-before-exit='* ) WAIT_BEFORE_EXIT="${1#*=}" ;;
   	( '--debug' ) DEBUG=1 ;;
     ( * ) print_usage
@@ -163,14 +161,18 @@ fi
 
 # Check html elements
 if [[ -n "$EXPECTING_CSS_SELECTOR" ]]; then
-	RETURNED_ELEMENT=$(echo "$RETURNED_HTML" | htmlq "$EXPECTING_CSS_SELECTOR")
-  require_value --name="CSS selector ($EXPECTING_CSS_SELECTOR)" --value="$RETURNED_ELEMENT"
-  if [[ -n "$EXPECTING_TEXT" ]]; then
-  	RETURNED_ELEMENT_TEXT=$(echo "$RETURNED_HTML" | htmlq --text "$EXPECTING_CSS_SELECTOR")
-		require_value_match --name="CSS selector ($EXPECTING_CSS_SELECTOR) text" --value="$RETURNED_ELEMENT_TEXT" --match="$EXPECTING_TEXT"
-	fi
-elif [[ -n "$EXPECTING_TEXT" ]]; then
-	exit_message "--text requires --css-selector."
+	for selector_text in "${EXPECTING_CSS_SELECTOR[@]}"; do
+		selector=$(echo "$selector_text" | grep -oP '.*(?=:contains)')
+		text=$(echo "$selector_text" | grep -oP '(?<=:contains\().*(?=\))')
+
+		RETURNED_ELEMENT=$(echo "$RETURNED_HTML" | htmlq "$selector")
+		require_value --name="CSS selector ($selector)" --value="$RETURNED_ELEMENT"
+
+		if [[ -n "$text" ]]; then
+			RETURNED_ELEMENT_TEXT=$(echo "$RETURNED_HTML" | htmlq --text "$selector")
+			require_value_match --name="CSS selector ($selector) text" --value="$RETURNED_ELEMENT_TEXT" --match="$text"
+		fi
+	done
 fi
 
 show_timer
