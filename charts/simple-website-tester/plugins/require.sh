@@ -162,8 +162,8 @@ fi
 # Check html elements
 if [[ -n "$EXPECTING_CSS_SELECTOR" ]]; then
 	for selector_text in "${EXPECTING_CSS_SELECTOR[@]}"; do
-		selector=$(echo "$selector_text" | grep -oP '.*(?=:contains)')
-		text=$(echo "$selector_text" | grep -oP '(?<=:contains\().*(?=\))')
+		selector=$(echo "$selector_text" | perl -n -e "/.*(?=:contains)/ && print $&")
+		text=$(echo "$selector_text" | perl -n -e "/(?<=:contains\().*(?=\))/ && print $&")
 
 		RETURNED_ELEMENT=$(echo "$RETURNED_HTML" | htmlq "$selector")
 		require_value --name="CSS selector ($selector)" --value="$RETURNED_ELEMENT"
