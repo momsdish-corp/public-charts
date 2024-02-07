@@ -13,6 +13,7 @@ print_usage() {
   echo "--redirects-to       (string) (optional) Full URL of the expected redirect."
   echo "--css-selector       (string) (optional) CSS selector to require"
   echo "--text               (string) (optional) Case-sensitive value to expect. Requires --css-selector."
+  echo "--wait-before-exit   (number) (optional) Wait time in seconds before exiting the script. Default is 0 seconds."
   echo "--debug                       (optional) Show debug/verbose output"
   echo "--help                                   Help"
 }
@@ -25,6 +26,7 @@ while (( ${#} > 0 )); do
     ( '--redirects-to='* ) EXPECTING_REDIRECTS_TO="${1#*=}" ;;
     ( '--css-selector='* ) EXPECTING_CSS_SELECTOR="${1#*=}" ;;
     ( '--text='* ) EXPECTING_TEXT="${1#*=}" ;;
+    ( '--wait-before-exit='* ) WAIT_BEFORE_EXIT="${1#*=}" ;;
   	( '--debug' ) DEBUG=1 ;;
     ( * ) print_usage
           exit 1;;
@@ -59,6 +61,13 @@ show_timer() {
 	fi
 }
 
+exit_message() {
+  # Wait for 5 seconds to allow k8s to collect logs
+  echo "Error! $1" && \
+    sleep "$WAIT_BEFORE_EXIT" && \
+    exit 1
+}
+
 require_value_match() {
 	is_true "$DEBUG" && echo "Executing require_value_match()"
 
@@ -79,8 +88,7 @@ require_value_match() {
 	if [[ "$value" == "$match" ]]; then
 		echo "Test passed!"
 	else
-		echo "Test failed! Returned $name: $value"
-		sleep 1 && exit 1
+		exit_message "Test failed! Returned $name: $value"
 	fi
 }
 
@@ -103,8 +111,7 @@ require_value() {
 	if [[ -n "$value" ]]; then
 		echo "Test passed!"
 	else
-		echo "Test failed!"
-		sleep 1 && exit 1
+		exit_message "Test failed!"
 	fi
 }
 
@@ -116,8 +123,7 @@ start_timer
 
 # Validate
 if [[ -z "$URL" ]]; then
-  echo "Error! URL is required."
-  exit 1
+  exit_message "URL is required."
 fi
 
 # Set defaults
@@ -164,8 +170,7 @@ if [[ -n "$EXPECTING_CSS_SELECTOR" ]]; then
 		require_value_match --name="CSS selector ($EXPECTING_CSS_SELECTOR) text" --value="$RETURNED_ELEMENT_TEXT" --match="$EXPECTING_TEXT"
 	fi
 elif [[ -n "$EXPECTING_TEXT" ]]; then
-	echo "Error! --text requires --css-selector."
-	sleep 1 && exit 1
+	exit_message "--text requires --css-selector."
 fi
 
 show_timer
