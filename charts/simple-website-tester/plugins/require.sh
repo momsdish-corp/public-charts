@@ -138,14 +138,19 @@ RETURNED_REDIRECT_URL=$(echo "$RETURNED_WRITE_OUT" | grep "RETURNED_REDIRECT_URL
 RETURNED_SIZE=$(echo "$RETURNED_WRITE_OUT" | grep "RETURNED_SIZE" | awk '{print $2}')
 RETURNED_LOAD_TIME=$(echo "$RETURNED_WRITE_OUT" | grep "RETURNED_LOAD_TIME" | awk '{print $2}')
 RETURNED_PAGE_TITLE=$(echo "$RETURNED_HTML" | htmlq --text "title")
-
-echo "Testing URL: $URL"
+echo "-------------------"
+echo "General Information"
+echo "-------------------"
+echo "URL: $URL"
 echo "Status code: $RETURNED_STATUS_CODE"
 echo "Redirects to: $RETURNED_REDIRECT_URL"
 echo "Size: $RETURNED_SIZE"
 echo "Load time: $RETURNED_LOAD_TIME"
 echo "Page title: $RETURNED_PAGE_TITLE"
 
+echo "-------"
+echo "Testing"
+echo "-------"
 
 # Test
 # - Check status code
@@ -160,9 +165,10 @@ fi
 
 # Check html elements
 if [[ -n "$EXPECTING_CSS_SELECTOR" ]]; then
+	echo "Selector $EXPECTING_CSS_SELECTOR"
 	for selector_text in "${EXPECTING_CSS_SELECTOR[@]}"; do
-		selector=$(echo "$selector_text" | perl -n -e "/.*(?=:contains)/ && print $&")
-		text=$(echo "$selector_text" | perl -n -e "/(?<=:contains\().*(?=\))/ && print $&")
+		selector=$(echo "$selector_text" | perl -n -e "/(.*?)(?=:contains|$)/ && print \$1")
+		text=$(echo "$selector_text" | perl -n -e "/(?<=:contains\()[\"']?[^\"']*[\"']?(?=\))/ && print \$&")
 
 		RETURNED_ELEMENT=$(echo "$RETURNED_HTML" | htmlq "$selector")
 		require_value --name="CSS selector ($selector)" --value="$RETURNED_ELEMENT"
