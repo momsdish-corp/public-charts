@@ -2,6 +2,8 @@
 
 set -e
 
+echo "### Executing command: $0 $* ###"
+
 # Print usage
 print_usage() {
   echo "Ths script runs a test on a website."
@@ -9,13 +11,17 @@ print_usage() {
   echo "Usage: $(dirname "$0")/$(basename "$0") --url=\"https://localhost:8443/about\" --status-code=\"301\" --redirects-to=\"https://localhost:8443/about/\""
   echo "Usage: $(dirname "$0")/$(basename "$0") --url=\"https://localhost:8443/\" --css-selector=\"title\" --text=\"My case-sensitive title!\""
   echo "--url                (string) (required) URL to fetch"
-  echo "--status-code        (number) (optional) Expected status code. If --status-code and --redirects-to is not provided, it defaults to 200."
+  echo "--status-code        (number) (optional) Expected status code. Defaults to 200."
   echo "--redirects-to       (string) (optional) Full URL of the expected redirect."
   echo "--css-selector       (string) (optional) CSS selector to require. Append :contains(text) to require a specific text. Allows for multiple selectors."
-  echo "--wait-before-exit   (number) (optional) Wait time in seconds before exiting the script. Default is 0 seconds."
+  echo "--wait-before-exit   (number) (optional) Wait time in seconds before exiting the script. Default is 1 second."
   echo "--debug                       (optional) Show debug/verbose output"
   echo "--help                                   Help"
 }
+
+# Set defaults
+EXPECTING_STATUS_CODE=200
+WAIT_BEFORE_EXIT=1
 
 # Arguments handling
 while (( ${#} > 0 )); do
@@ -121,12 +127,6 @@ start_timer
 # Validate
 if [[ -z "$URL" ]]; then
   exit_message "URL is required."
-fi
-
-# Set defaults
-# - If no tests passed, request to check the URL for status code 200
-if [[ -z "$EXPECTING_STATUS_CODE" ]] && [[ -z "$EXPECTING_REDIRECTS_TO" ]] && [[ -z "$EXPECTING_CSS_SELECTOR" ]]; then
-	EXPECTING_STATUS_CODE=200
 fi
 
 # Get the basic information of the URL

@@ -2,6 +2,8 @@
 
 set -e
 
+echo "### Executing command: $0 $* ###"
+
 # Print usage
 print_usage() {
   echo "Ths script reloads a path on a website."
@@ -10,10 +12,14 @@ print_usage() {
   echo "--url                (string) (required) URL to fetch"
   echo "--count							 (number) (optional) Number of times to reload. Default is 1."
   echo "--interval-seconds   (number) (optional) Interval in seconds between reloads. Default is 3 seconds."
-  echo "--wait-before-exit   (number) (optional) Wait time in seconds before exiting the script. Default is 0 seconds."
+  echo "--wait-before-exit   (number) (optional) Wait time in seconds before exiting the script. Default is 1 second."
   echo "--debug                       (optional) Show debug/verbose output"
   echo "--help                                   Help"
 }
+
+# Set defaults
+INTERVAL_SECONDS=3
+WAIT_BEFORE_EXIT=1
 
 # Arguments handling
 while (( ${#} > 0 )); do
