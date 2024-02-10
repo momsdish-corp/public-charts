@@ -11,6 +11,7 @@ print_usage() {
   echo "Usage: $(dirname "$0")/$(basename "$0") --url=\"https://localhost:8443/about\" --status-code=\"301\" --redirects-to=\"https://localhost:8443/about/\""
   echo "Usage: $(dirname "$0")/$(basename "$0") --url=\"https://localhost:8443/\" --css-selector=\"title\" --text=\"My case-sensitive title!\""
   echo "--url                (string) (required) URL to fetch"
+  echo "--path               (string) (optional) Path, relative to the URL"
   echo "--status-code        (number) (optional) Expected status code. Defaults to 200."
   echo "--redirects-to       (string) (optional) Full URL of the expected redirect."
   echo "--css-selector       (string) (optional) CSS selector to require. Append :contains(text) to require a specific text. Allows for multiple selectors."
@@ -27,6 +28,7 @@ WAIT_BEFORE_EXIT=1
 while (( ${#} > 0 )); do
   case "${1}" in
     ( '--url='* ) URL="${1#*=}" ;;
+  	( '--path='* ) URL_PATH="${1#*=}" ;;
   	( '--status-code='* ) EXPECTING_STATUS_CODE="${1#*=}" ;;
     ( '--redirects-to='* ) EXPECTING_REDIRECTS_TO="${1#*=}" ;;
     ( '--css-selector='* ) EXPECTING_CSS_SELECTOR+=("${1#*=}") ;; # Store in an array
@@ -130,7 +132,7 @@ if [[ -z "$URL" ]]; then
 fi
 
 # Get the basic information of the URL
-RETURNED_CURL=$(curl --connect-timeout 5 --max-time 10 --insecure --silent --write-out "\n---BEGIN WRITE-OUT---\nRETURNED_STATUS_CODE: %{response_code}\nRETURNED_REDIRECT_URL: %{redirect_url}\nRETURNED_SIZE: %{size_download}\nRETURNED_LOAD_TIME: %{time_total}\n" "$URL" 2>/dev/null)
+RETURNED_CURL=$(curl --connect-timeout 5 --max-time 10 --insecure --silent --write-out "\n---BEGIN WRITE-OUT---\nRETURNED_STATUS_CODE: %{response_code}\nRETURNED_REDIRECT_URL: %{redirect_url}\nRETURNED_SIZE: %{size_download}\nRETURNED_LOAD_TIME: %{time_total}\n" "${URL}${URL_PATH}" 2>/dev/null)
 RETURNED_HTML=$(echo "$RETURNED_CURL" | perl -pe 'last if /---BEGIN WRITE-OUT---/')
 RETURNED_WRITE_OUT=$(echo "$RETURNED_CURL" | perl -0777 -pe 's/.*?---BEGIN WRITE-OUT---\n//s')
 RETURNED_STATUS_CODE=$(echo "$RETURNED_WRITE_OUT" | grep "RETURNED_STATUS_CODE" | awk '{print $2}')
@@ -139,7 +141,7 @@ RETURNED_SIZE=$(echo "$RETURNED_WRITE_OUT" | grep "RETURNED_SIZE" | awk '{print 
 RETURNED_LOAD_TIME=$(echo "$RETURNED_WRITE_OUT" | grep "RETURNED_LOAD_TIME" | awk '{print $2}')
 RETURNED_PAGE_TITLE=$(echo "$RETURNED_HTML" | htmlq --text "title")
 echo "----------------------------------------"
-echo "Fetching $URL"
+echo "Fetching ${URL}${URL_PATH}"
 echo "----------------------------------------"
 echo "Status code: $RETURNED_STATUS_CODE"
 echo "Redirects to: $RETURNED_REDIRECT_URL"

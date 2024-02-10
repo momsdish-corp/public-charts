@@ -22,14 +22,16 @@ values.yaml.
 
 Example:
 ```
+url: example.com
 plugins:
   downloader:
-    - url: google.com
+    - url: example.com
+      path: /
       fetch:
         - jpg
         - png
 ```
 Will run
 ```
-/plugins/downloader.sh --url="google.com" --fetch="jpg" --fetch="png"
+/plugins/downloader.sh --url="example.com" --path="/" --fetch="jpg" --fetch="png"
 ```

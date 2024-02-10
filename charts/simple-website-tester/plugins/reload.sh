@@ -10,6 +10,7 @@ print_usage() {
   echo
   echo "Usage: $(dirname "$0")/$(basename "$0") --url=\"https://localhost:8443/about\" --count=\"3\" --interval-seconds=\"5\""
   echo "--url                (string) (required) URL to fetch"
+  echo "--path               (string) (optional) Path, relative to the URL"
   echo "--count							 (number) (optional) Number of times to reload. Default is 1."
   echo "--interval-seconds   (number) (optional) Interval in seconds between reloads. Default is 3 seconds."
   echo "--wait-before-exit   (number) (optional) Wait time in seconds before exiting the script. Default is 1 second."
@@ -25,6 +26,7 @@ WAIT_BEFORE_EXIT=1
 while (( ${#} > 0 )); do
   case "${1}" in
     ( '--url='* ) URL="${1#*=}" ;;
+  	( '--path='* ) URL_PATH="${1#*=}" ;;
   	( '--count='* ) COUNT="${1#*=}" ;;
 		( '--interval-seconds='* ) INTERVAL_SECONDS="${1#*=}" ;;
 		( '--wait-before-exit='* ) WAIT_BEFORE_EXIT="${1#*=}" ;;
@@ -81,11 +83,11 @@ if [[ -z "$URL" ]]; then
 fi
 
 echo "----------------------------------------"
-echo "Reloading $URL ($COUNT times)"
+echo "Reloading ${URL}${PATH} ($COUNT times)"
 echo "----------------------------------------"
 for (( i=1; i<=$COUNT; i++ )); do
 	# Get the basic information of the URL
-  RETURNED_WRITE_OUT=$(curl --connect-timeout 5 --max-time 10 --insecure --silent --output /dev/null --write-out "\nRETURNED_STATUS_CODE: %{response_code}\nRETURNED_REDIRECT_URL: %{redirect_url}\nRETURNED_SIZE: %{size_download}\nRETURNED_LOAD_TIME: %{time_total}\n" "$URL" 2>/dev/null)
+  RETURNED_WRITE_OUT=$(curl --connect-timeout 5 --max-time 10 --insecure --silent --output /dev/null --write-out "\nRETURNED_STATUS_CODE: %{response_code}\nRETURNED_REDIRECT_URL: %{redirect_url}\nRETURNED_SIZE: %{size_download}\nRETURNED_LOAD_TIME: %{time_total}\n" "${URL}${PATH}" 2>/dev/null)
   RETURNED_STATUS_CODE=$(echo "$RETURNED_WRITE_OUT" | grep "RETURNED_STATUS_CODE" | awk '{print $2}')
   RETURNED_REDIRECT_URL=$(echo "$RETURNED_WRITE_OUT" | grep "RETURNED_REDIRECT_URL" | awk '{print $2}')
   RETURNED_SIZE=$(echo "$RETURNED_WRITE_OUT" | grep "RETURNED_SIZE" | awk '{print $2}')
