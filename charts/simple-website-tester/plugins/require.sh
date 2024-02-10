@@ -2,7 +2,7 @@
 
 set -e
 
-echo "### Executing command: $0 $* ###"
+echo "Executing command: $0 $*"
 
 # Print usage
 print_usage() {
@@ -12,10 +12,10 @@ print_usage() {
   echo "Usage: $(dirname "$0")/$(basename "$0") --url=\"https://localhost:8443/\" --css-selector=\"title\" --text=\"My case-sensitive title!\""
   echo "--url                (string) (required) URL to fetch"
   echo "--path               (string) (optional) Path, relative to the URL"
-  echo "--status-code        (number) (optional) Expected status code. Defaults to 200."
-  echo "--redirects-to       (string) (optional) Full URL of the expected redirect."
-  echo "--css-selector       (string) (optional) CSS selector to require. Append :contains(text) to require a specific text. Allows for multiple selectors."
-  echo "--wait-before-exit   (number) (optional) Wait time in seconds before exiting the script. Default is 1 second."
+  echo "--statusCode         (number) (optional) Expected status code. Defaults to 200."
+  echo "--redirectsTo        (string) (optional) Full URL of the expected redirect."
+  echo "--cssSelector        (string) (optional) CSS selector to require. Append :contains(text) to require a specific text. Allows for multiple selectors."
+  echo "--waitBeforeExit     (number) (optional) Wait time in seconds before exiting the script. Default is 1 second."
   echo "--debug                       (optional) Show debug/verbose output"
   echo "--help                                   Help"
 }

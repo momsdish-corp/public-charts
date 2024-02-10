@@ -24,7 +24,7 @@ data:
       {{- range $plugin, $pluginValues := .Values.plugins }}
         {{- if $pluginValues }}
           {{- range $commandIndex, $commandObject := $pluginValues }}
-            /mnt/plugins/{{ $plugin }}.sh --url={{ .Values.url | quote }}
+            /mnt/plugins/{{ $plugin }}.sh --url={{ $.Values.url | quote }}
             {{- range $commandKey, $commandValue := $commandObject -}}
               {{- if kindIs "slice" $commandValue }}
                 {{- range $optionIndex, $optionObject := $commandValue }} --{{ $commandKey }}={{ $optionObject }}{{ end -}}

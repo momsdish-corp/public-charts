@@ -2,7 +2,7 @@
 
 set -e
 
-echo "### Executing command: $0 $* ###"
+echo "Executing command: $0 $*"
 
 # Print usage
 print_usage() {
@@ -12,8 +12,8 @@ print_usage() {
   echo "--url                (string) (required) URL to fetch"
   echo "--path               (string) (optional) Path, relative to the URL"
   echo "--count							 (number) (optional) Number of times to reload. Default is 1."
-  echo "--interval-seconds   (number) (optional) Interval in seconds between reloads. Default is 3 seconds."
-  echo "--wait-before-exit   (number) (optional) Wait time in seconds before exiting the script. Default is 1 second."
+  echo "--intervalSeconds    (number) (optional) Interval in seconds between reloads. Default is 3 seconds."
+  echo "--waitBeforeExit     (number) (optional) Wait time in seconds before exiting the script. Default is 1 second."
   echo "--debug                       (optional) Show debug/verbose output"
   echo "--help                                   Help"
 }
