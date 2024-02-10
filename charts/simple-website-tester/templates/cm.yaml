@@ -7,32 +7,30 @@ data:
   entrypoint.sh: |
     #!/bin/bash
     set -e
+
     # Need to wait to allow devspace.yaml script to catch up.
     sleep 5
-    # PLUGIN - RELOAD
-    # Ports .reload* values to reload.sh script
-    {{- if .Values.reload }}
-    {{- range $reload := .Values.reload }}
-    /mnt/plugins/reload.sh --wait-before-exit=2
-      {{- if $.Values.debug }} --debug{{- end }}
-      {{- if $reload.path }} --url="{{ $.Values.website }}{{ $reload.path }}"{{- end }}
-      {{- if $reload.count }} --count={{ $reload.count | quote }}{{- end }}
-      {{- if $reload.intervalSeconds }} --interval-seconds={{ $reload.intervalSeconds | quote }}{{- end }}
+
+    # Values in .plugins.* are passed to the plugin as command line arguments.
+    # Example:
+    # plugins:
+    #   downloader:
+    #     - url: google.com
+    #       fetch:
+    #         - jpg
+    #         - png
+    # Will run /plugins/downloader.sh --url="google.com" --fetch="jpg" --fetch="png"
+    {{ if .Values.plugins }}
+      {{- range $plugin, $pluginValues := .Values.plugins }}
+        {{- if $pluginValues }}
+          {{- range $commandIndex, $commandObject := $pluginValues }}
+            /mnt/plugins/{{ $plugin }}.sh
+            {{- range $commandKey, $commandValue := $commandObject -}}
+              {{- if kindIs "slice" $commandValue }}
+                {{- range $optionIndex, $optionObject := $commandValue }} --{{ $commandKey }}={{ $optionObject }}{{ end -}}
+              {{ else }} --{{ $commandKey }}={{ $commandValue | quote }}{{ end -}}
+            {{- end -}}
+          {{- end }}
+        {{- end }}
+      {{- end }}
     {{- end }}
-    {{- end }}
-    # PLUGIN - REQUIRE
-    # Ports .require* values to require.sh script
-    {{- if .Values.require }}
-    {{- range $require := .Values.require }}
-    /mnt/plugins/require.sh --wait-before-exit=2
-      {{- if $.Values.debug }} --debug{{- end }}
-      {{- if $require.path }} --url="{{ $.Values.website }}{{ $require.path }}"{{- end }}
-      {{- if $require.statusCode }} --status-code={{ $require.statusCode | quote }}{{- end }}
-      {{- if $require.redirectsTo }} --redirects-to="{{ $.Values.website }}{{ $require.redirectsTo }}"{{- end }}
-    {{- range $html := $require.html }}
-      {{- if $html.cssSelector }} --css-selector="{{ $html.cssSelector }}{{- if $html.text }}:contains({{ $html.text }}){{- end }}"{{- end }}
-    {{- end }}
-    {{- end }}
-    {{- end }}
-    # PLUGIN - MY OTHER PLUGIN
-    # Put your plugin code here, and the script into the plugins folder.
