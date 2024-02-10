@@ -8,8 +8,8 @@ echo "Executing command: $0 $*"
 print_usage() {
   echo "Ths script runs a test on a website."
   echo
-  echo "Usage: $(dirname "$0")/$(basename "$0") --url=\"https://localhost:8443/about\" --status-code=\"301\" --redirects-to=\"https://localhost:8443/about/\""
-  echo "Usage: $(dirname "$0")/$(basename "$0") --url=\"https://localhost:8443/\" --css-selector=\"title\" --text=\"My case-sensitive title!\""
+  echo "Usage: $(dirname "$0")/$(basename "$0") --url=\"https://localhost:8443\" --path=\"/about\" --statusCode=\"301\" --redirectsTo=\"https://localhost:8443/about/\""
+  echo "Usage: $(dirname "$0")/$(basename "$0") --url=\"https://localhost:8443/\" --cssSelector=\"title\" --text=\"My case-sensitive title!\""
   echo "--url                (string) (required) URL to fetch"
   echo "--path               (string) (optional) Path, relative to the URL"
   echo "--statusCode         (number) (optional) Expected status code. Defaults to 200."
@@ -29,10 +29,10 @@ while (( ${#} > 0 )); do
   case "${1}" in
     ( '--url='* ) URL="${1#*=}" ;;
   	( '--path='* ) URL_PATH="${1#*=}" ;;
-  	( '--status-code='* ) EXPECTING_STATUS_CODE="${1#*=}" ;;
-    ( '--redirects-to='* ) EXPECTING_REDIRECTS_TO="${1#*=}" ;;
-    ( '--css-selector='* ) EXPECTING_CSS_SELECTOR+=("${1#*=}") ;; # Store in an array
-    ( '--wait-before-exit='* ) WAIT_BEFORE_EXIT="${1#*=}" ;;
+  	( '--statusCode='* ) EXPECTING_STATUS_CODE="${1#*=}" ;;
+    ( '--redirectsTo='* ) EXPECTING_REDIRECTS_TO="${1#*=}" ;;
+    ( '--cssSelector='* ) EXPECTING_CSS_SELECTOR+=("${1#*=}") ;; # Store in an array
+    ( '--waitBeforeExit='* ) WAIT_BEFORE_EXIT="${1#*=}" ;;
   	( '--debug' ) DEBUG=1 ;;
     ( * ) print_usage
           exit 1;;

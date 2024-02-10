@@ -8,7 +8,7 @@ echo "Executing command: $0 $*"
 print_usage() {
   echo "Ths script reloads a path on a website."
   echo
-  echo "Usage: $(dirname "$0")/$(basename "$0") --url=\"https://localhost:8443/about\" --count=\"3\" --interval-seconds=\"5\""
+  echo "Usage: $(dirname "$0")/$(basename "$0") --url=\"https://localhost:8443\" --path=\"/some-path\" --count=\"3\" --intervalSeconds=\"5\""
   echo "--url                (string) (required) URL to fetch"
   echo "--path               (string) (optional) Path, relative to the URL"
   echo "--count							 (number) (optional) Number of times to reload. Default is 1."
@@ -28,8 +28,8 @@ while (( ${#} > 0 )); do
     ( '--url='* ) URL="${1#*=}" ;;
   	( '--path='* ) URL_PATH="${1#*=}" ;;
   	( '--count='* ) COUNT="${1#*=}" ;;
-		( '--interval-seconds='* ) INTERVAL_SECONDS="${1#*=}" ;;
-		( '--wait-before-exit='* ) WAIT_BEFORE_EXIT="${1#*=}" ;;
+		( '--intervalSeconds='* ) INTERVAL_SECONDS="${1#*=}" ;;
+		( '--waitBeforeExit='* ) WAIT_BEFORE_EXIT="${1#*=}" ;;
   	( '--debug' ) DEBUG=1 ;;
     ( * ) print_usage
           exit 1;;
