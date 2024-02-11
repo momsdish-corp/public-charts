@@ -34,6 +34,10 @@ start_timer() {
   START_TIME=$(date +%s)
 }
 
+show_timer() {
+	is_true "$DEBUG" && echo "$(($(date +%s)-START_TIME)) seconds passed since the start of script." || true
+}
+
 return_url_decoded() {
   # Usage: url_decode "string"
   : "${*//+/ }"
@@ -47,14 +51,6 @@ return_number() {
   else
     echo ""
   fi
-}
-
-show_timer() {
-	if is_true "$DEBUG"; then
-  	echo "$(($(date +%s)-START_TIME)) seconds passed since the start of script."
-	else
-		:
-	fi
 }
 
 exit_message() {
@@ -98,9 +94,12 @@ if [[ -z "$URL" ]]; then
   exit_message "URL is required."
 fi
 
-echo "----------------------------------------"
-echo "Reloading ${URL}${URL_PATH} ($COUNT times)"
-echo "----------------------------------------"
+# Plural/Singular
+[[ "$COUNT" -gt 1 ]] && \
+	TIMES_STRING="times (${INTERVAL_SECONDS}s pauses)" || \
+	TIMES_STRING="time"
+
+echo "### Reloading ${URL}${URL_PATH} $COUNT $TIMES_STRING ###"
 for (( i=1; i<=$COUNT; i++ )); do
 	# Get the basic information of the URL
   RETURNED_WRITE_OUT=$(curl --connect-timeout 5 --max-time 10 --insecure --silent --output /dev/null --write-out "\nRETURNED_STATUS_CODE: %{response_code}\nRETURNED_REDIRECT_URL: %{redirect_url}\nRETURNED_SIZE: %{size_download}\nRETURNED_LOAD_TIME: %{time_total}\n" "${URL}${URL_PATH}" 2>/dev/null)
@@ -108,6 +107,9 @@ for (( i=1; i<=$COUNT; i++ )); do
   RETURNED_REDIRECT_URL=$(echo "$RETURNED_WRITE_OUT" | grep "RETURNED_REDIRECT_URL" | awk '{print $2}')
   RETURNED_SIZE=$(echo "$RETURNED_WRITE_OUT" | grep "RETURNED_SIZE" | awk '{print $2}')
   RETURNED_LOAD_TIME=$(echo "$RETURNED_WRITE_OUT" | grep "RETURNED_LOAD_TIME" | awk '{print $2}')
+
+	# Show the separator
+  [[ $i != 1 ]] && echo '-'
 
 	echo "Count: $i of $COUNT"
 	echo "Status code: $RETURNED_STATUS_CODE"

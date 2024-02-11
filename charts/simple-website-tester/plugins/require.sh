@@ -37,11 +37,7 @@ start_timer() {
 }
 
 show_timer() {
-	if is_true "$DEBUG"; then
-  	echo "$(($(date +%s)-START_TIME)) seconds passed since the start of script."
-	else
-		:
-	fi
+	is_true "$DEBUG" && echo "$(($(date +%s)-START_TIME)) seconds passed since the start of script." || true
 }
 
 return_url_decoded() {
@@ -67,7 +63,7 @@ exit_message() {
 }
 
 require_value_match() {
-	is_true "$DEBUG" && echo "Executing require_value_match()"
+	is_true "$DEBUG" && echo "Executing require_value_match()" || true
 
 	local 'name' 'value' 'match'
 
@@ -81,7 +77,7 @@ require_value_match() {
 		shift
 	done
 
-	echo "Expecting $name: $match"
+	echo "Requiring $name: $match"
 
 	if [[ "$value" == "$match" ]]; then
 		echo "Test passed!"
@@ -91,7 +87,7 @@ require_value_match() {
 }
 
 require_value() {
-	is_true "$DEBUG" && echo "Executing require_value()"
+	is_true "$DEBUG" && echo "Executing require_value()" || true
 
 	local 'name' 'value'
 
@@ -104,7 +100,7 @@ require_value() {
 		shift
 	done
 
-	echo "Expecting $name to exist"
+	echo "Requiring $name to exist"
 
 	if [[ -n "$value" ]]; then
 		echo "Test passed!"
@@ -157,40 +153,37 @@ RETURNED_REDIRECT_URL=$(echo "$RETURNED_WRITE_OUT" | grep "RETURNED_REDIRECT_URL
 RETURNED_SIZE=$(echo "$RETURNED_WRITE_OUT" | grep "RETURNED_SIZE" | awk '{print $2}')
 RETURNED_LOAD_TIME=$(echo "$RETURNED_WRITE_OUT" | grep "RETURNED_LOAD_TIME" | awk '{print $2}')
 RETURNED_PAGE_TITLE=$(echo "$RETURNED_HTML" | htmlq --text "title")
-echo "----------------------------------------"
-echo "Fetching ${URL}${URL_PATH}"
-echo "----------------------------------------"
-echo "Status code: $RETURNED_STATUS_CODE"
-echo "Redirects to: $RETURNED_REDIRECT_URL"
-echo "Size: $RETURNED_SIZE"
-echo "Load time: $RETURNED_LOAD_TIME"
-echo "Page title: $RETURNED_PAGE_TITLE"
-
-echo "-------------"
-echo "Running Tests"
-echo "-------------"
+echo "### Fetching ${URL}${URL_PATH} ###"
+echo "> Status code: $RETURNED_STATUS_CODE"
+echo "> Redirects to: $RETURNED_REDIRECT_URL"
+echo "> Size: $RETURNED_SIZE"
+echo "> Load time: $RETURNED_LOAD_TIME"
+echo "> Page title: $RETURNED_PAGE_TITLE"
 
 # Test
 # - Check status code
 if [[ -n "$EXPECTING_STATUS_CODE" ]]; then
+	echo '-'
 	require_value_match --name="status code" --value="$RETURNED_STATUS_CODE" --match="$EXPECTING_STATUS_CODE"
 fi
 
 # Checks redirects
 if [[ -n "$EXPECTING_REDIRECTS_TO" ]]; then
+	echo '-'
 	require_value_match --name="redirects to" --value="$RETURNED_REDIRECT_URL" --match="${URL}${EXPECTING_REDIRECTS_TO}"
 fi
 
 # Check html elements
 if [[ -n "$EXPECTING_CSS_SELECTOR" ]]; then
-	echo "Selector $EXPECTING_CSS_SELECTOR"
 	for selector_text in "${EXPECTING_CSS_SELECTOR[@]}"; do
+		echo '-'
 		selector=$(echo "$selector_text" | perl -n -e "/(.*?)(?=:contains|$)/ && print \$1")
 		text=$(echo "$selector_text" | perl -n -e "/(?<=:contains\()[\"']?([^\"']*)[\"']?(?=\))/ && print \$1")
 
 		RETURNED_ELEMENT=$(echo "$RETURNED_HTML" | htmlq "$selector")
 		require_value --name="CSS selector ($selector)" --value="$RETURNED_ELEMENT"
 		if [[ -n "$text" ]]; then
+			echo '-'
 			RETURNED_ELEMENT_TEXT=$(echo "$RETURNED_HTML" | htmlq --text "$selector")
 			require_value_match --name="CSS selector ($selector) text" --value="$RETURNED_ELEMENT_TEXT" --match="$text"
 		fi
