@@ -17,4 +17,21 @@ We use this in-house to test our website after each update, before deploying to 
 done automatically, and we can be sure that the website is still working as expected.
 
 ## Adding Plugins
-This chart was designed to be extensible. You can add your own plugins to ./plugins/*.sh, and then update cm.yaml.
+This chart is designed to be extensible. Simply add your own script to ./plugins/*.sh. You can then add the commands via
+values.yaml.
+
+Example:
+```
+url: example.com
+plugins:
+  downloader:
+    - url: example.com
+      path: /
+      fetch:
+        - jpg
+        - png
+```
+Will run
+```
+/plugins/downloader.sh --url="example.com" --path="/" --fetch="jpg" --fetch="png"
+```

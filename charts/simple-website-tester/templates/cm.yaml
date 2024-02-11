@@ -7,32 +7,45 @@ data:
   entrypoint.sh: |
     #!/bin/bash
     set -e
+
     # Need to wait to allow devspace.yaml script to catch up.
     sleep 5
-    # PLUGIN - RELOAD
-    # Ports .reload* values to reload.sh script
-    {{- if .Values.reload }}
-    {{- range $reload := .Values.reload }}
-    /mnt/plugins/reload.sh --wait-before-exit=2
-      {{- if $.Values.debug }} --debug{{- end }}
-      {{- if $reload.path }} --url="{{ $.Values.website }}{{ $reload.path }}"{{- end }}
-      {{- if $reload.count }} --count={{ $reload.count | quote }}{{- end }}
-      {{- if $reload.intervalSeconds }} --interval-seconds={{ $reload.intervalSeconds | quote }}{{- end }}
+
+    # Example:
+    # url: example.com
+    # plugins:
+    #   downloader:
+    #   - path: /
+    #     fetch:
+    #       - jpg
+    #       - png
+    # Will run /plugins/downloader.sh --url="example.com" --path="/" --fetch="jpg" --fetch="png"
+    {{- if .Values.debug -}}
+      {{- printf "set -x;" | nindent 4 -}}
+    {{- end -}}
+    {{ if .Values.plugins -}}
+      {{- range $plugin, $pluginValues := .Values.plugins -}}
+        {{- if $pluginValues -}}
+          {{- range $commandIndex, $commandObject := $pluginValues -}}
+            {{- $cmd := printf "/mnt/plugins/%s.sh --url=%s" $plugin (urlquery $.Values.url) -}}
+            {{- if $.Values.debug -}}
+              {{- $cmd = printf "%s --debug" $cmd -}}
+            {{- end -}}
+            {{- range $commandKey, $commandValue := $commandObject -}}
+              {{- if kindIs "slice" $commandValue -}}
+                {{- range $optionIndex, $optionObject := $commandValue -}}
+                  {{- $cmd = printf "%s --%s=%s" $cmd $commandKey (urlquery $optionObject) -}}
+                {{- end -}}
+              {{- else -}}
+                {{- $cmd = printf "%s --%s=%s" $cmd $commandKey (urlquery $commandValue) -}}
+              {{- end -}}
+            {{- end -}}
+            {{- printf "echo; %s" $cmd | nindent 4 -}}
+          {{- end -}}
+        {{- end -}}
+      {{- end -}}
+      {{ printf "echo; echo 'All tests have successfully passed!'" | nindent 4 -}}
     {{- end }}
-    {{- end }}
-    # PLUGIN - REQUIRE
-    # Ports .require* values to require.sh script
-    {{- if .Values.require }}
-    {{- range $require := .Values.require }}
-    /mnt/plugins/require.sh --wait-before-exit=2
-      {{- if $.Values.debug }} --debug{{- end }}
-      {{- if $require.path }} --url="{{ $.Values.website }}{{ $require.path }}"{{- end }}
-      {{- if $require.statusCode }} --status-code={{ $require.statusCode | quote }}{{- end }}
-      {{- if $require.redirectsTo }} --redirects-to="{{ $.Values.website }}{{ $require.redirectsTo }}"{{- end }}
-    {{- range $html := $require.html }}
-      {{- if $html.cssSelector }} --css-selector="{{ $html.cssSelector }}{{- if $html.text }}:contains({{ $html.text }}){{- end }}"{{- end }}
-    {{- end }}
-    {{- end }}
-    {{- end }}
-    # PLUGIN - MY OTHER PLUGIN
-    # Put your plugin code here, and the script into the plugins folder.
+    {{- if .Values.debug -}}
+      {{- printf "set +x;" | nindent 4 -}}
+    {{- end -}}

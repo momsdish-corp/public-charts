@@ -6,31 +6,17 @@ set -e
 print_usage() {
   echo "Ths script runs a test on a website."
   echo
-  echo "Usage: $(dirname "$0")/$(basename "$0") --url=\"https://localhost:8443/about\" --status-code=\"301\" --redirects-to=\"https://localhost:8443/about/\""
-  echo "Usage: $(dirname "$0")/$(basename "$0") --url=\"https://localhost:8443/\" --css-selector=\"title\" --text=\"My case-sensitive title!\""
+  echo "Usage: $(dirname "$0")/$(basename "$0") --url=\"https://localhost:8443\" --path=\"/about\" --statusCode=\"301\" --redirectsTo=\"https://localhost:8443/about/\""
+  echo "Usage: $(dirname "$0")/$(basename "$0") --url=\"https://localhost:8443/\" --cssSelector='title:contains(\"My case-sensitive title!\")'"
   echo "--url                (string) (required) URL to fetch"
-  echo "--status-code        (number) (optional) Expected status code. If --status-code and --redirects-to is not provided, it defaults to 200."
-  echo "--redirects-to       (string) (optional) Full URL of the expected redirect."
-  echo "--css-selector       (string) (optional) CSS selector to require. Append :contains(text) to require a specific text. Allows for multiple selectors."
-  echo "--wait-before-exit   (number) (optional) Wait time in seconds before exiting the script. Default is 0 seconds."
+  echo "--path               (string) (optional) Path, relative to the URL"
+  echo "--statusCode         (number) (optional) Expected status code. Defaults to 200."
+  echo "--redirectsTo        (string) (optional) Full URL of the expected redirect."
+  echo "--cssSelector        (string) (optional) CSS selector to require. Append :contains(text) to require a specific text. Allows for multiple selectors."
+  echo "--waitBeforeExit     (number) (optional) Wait time in seconds before exiting the script. Default is 1 second."
   echo "--debug                       (optional) Show debug/verbose output"
   echo "--help                                   Help"
 }
-
-# Arguments handling
-while (( ${#} > 0 )); do
-  case "${1}" in
-    ( '--url='* ) URL="${1#*=}" ;;
-  	( '--status-code='* ) EXPECTING_STATUS_CODE="${1#*=}" ;;
-    ( '--redirects-to='* ) EXPECTING_REDIRECTS_TO="${1#*=}" ;;
-    ( '--css-selector='* ) EXPECTING_CSS_SELECTOR+=("${1#*=}") ;; # Store in an array
-    ( '--wait-before-exit='* ) WAIT_BEFORE_EXIT="${1#*=}" ;;
-  	( '--debug' ) DEBUG=1 ;;
-    ( * ) print_usage
-          exit 1;;
-  esac
-  shift
-done
 
 #################
 ### Functions ###
@@ -51,11 +37,22 @@ start_timer() {
 }
 
 show_timer() {
-	if is_true "$DEBUG"; then
-  	echo "$(($(date +%s)-START_TIME)) seconds passed since the start of script."
-	else
-		:
-	fi
+	is_true "$DEBUG" && echo "$(($(date +%s)-START_TIME)) seconds passed since the start of script." || true
+}
+
+return_url_decoded() {
+  # Usage: url_decode "string"
+  : "${*//+/ }"
+  printf '%b\n' "${_//%/\\x}"
+}
+
+return_number() {
+  local re='^[0-9]+$'
+  if [[ $1 =~ $re ]] ; then
+    echo "$1"
+  else
+    echo ""
+  fi
 }
 
 exit_message() {
@@ -66,7 +63,7 @@ exit_message() {
 }
 
 require_value_match() {
-	is_true "$DEBUG" && echo "Executing require_value_match()"
+	is_true "$DEBUG" && echo "Executing require_value_match()" || true
 
 	local 'name' 'value' 'match'
 
@@ -80,7 +77,7 @@ require_value_match() {
 		shift
 	done
 
-	echo "Expecting $name: $match"
+	echo "Requiring $name: $match"
 
 	if [[ "$value" == "$match" ]]; then
 		echo "Test passed!"
@@ -90,7 +87,7 @@ require_value_match() {
 }
 
 require_value() {
-	is_true "$DEBUG" && echo "Executing require_value()"
+	is_true "$DEBUG" && echo "Executing require_value()" || true
 
 	local 'name' 'value'
 
@@ -103,7 +100,7 @@ require_value() {
 		shift
 	done
 
-	echo "Expecting $name to exist"
+	echo "Requiring $name to exist"
 
 	if [[ -n "$value" ]]; then
 		echo "Test passed!"
@@ -111,6 +108,30 @@ require_value() {
 		exit_message "Test failed!"
 	fi
 }
+
+###############
+### Globals ###
+###############
+
+# Set defaults
+EXPECTING_STATUS_CODE=200
+WAIT_BEFORE_EXIT=1
+
+# Arguments handling
+while (( ${#} > 0 )); do
+  case "${1}" in
+    ( '--url='* ) URL="$(return_url_decoded "${1#*=}")" ;;
+  	( '--path='* ) URL_PATH="$(return_url_decoded "${1#*=}")" ;;
+  	( '--statusCode='* ) EXPECTING_STATUS_CODE="$(return_number "${1#*=}")" ;;
+    ( '--redirectsTo='* ) EXPECTING_REDIRECTS_TO="$(return_url_decoded "${1#*=}")" ;;
+    ( '--cssSelector='* ) EXPECTING_CSS_SELECTOR+=("$(return_url_decoded "${1#*=}")") ;; # Store in an array
+    ( '--waitBeforeExit='* ) WAIT_BEFORE_EXIT="$(return_number "${1#*=}")" ;;
+  	( '--debug' ) DEBUG=1 ;;
+    ( * ) print_usage
+          exit 1;;
+  esac
+  shift
+done
 
 ##############
 ### Script ###
@@ -123,14 +144,8 @@ if [[ -z "$URL" ]]; then
   exit_message "URL is required."
 fi
 
-# Set defaults
-# - If no tests passed, request to check the URL for status code 200
-if [[ -z "$EXPECTING_STATUS_CODE" ]] && [[ -z "$EXPECTING_REDIRECTS_TO" ]] && [[ -z "$EXPECTING_CSS_SELECTOR" ]]; then
-	EXPECTING_STATUS_CODE=200
-fi
-
 # Get the basic information of the URL
-RETURNED_CURL=$(curl --connect-timeout 5 --max-time 10 --insecure --silent --write-out "\n---BEGIN WRITE-OUT---\nRETURNED_STATUS_CODE: %{response_code}\nRETURNED_REDIRECT_URL: %{redirect_url}\nRETURNED_SIZE: %{size_download}\nRETURNED_LOAD_TIME: %{time_total}\n" "$URL" 2>/dev/null)
+RETURNED_CURL=$(curl --connect-timeout 5 --max-time 10 --insecure --silent --write-out "\n---BEGIN WRITE-OUT---\nRETURNED_STATUS_CODE: %{response_code}\nRETURNED_REDIRECT_URL: %{redirect_url}\nRETURNED_SIZE: %{size_download}\nRETURNED_LOAD_TIME: %{time_total}\n" "${URL}${URL_PATH}" 2>/dev/null)
 RETURNED_HTML=$(echo "$RETURNED_CURL" | perl -pe 'last if /---BEGIN WRITE-OUT---/')
 RETURNED_WRITE_OUT=$(echo "$RETURNED_CURL" | perl -0777 -pe 's/.*?---BEGIN WRITE-OUT---\n//s')
 RETURNED_STATUS_CODE=$(echo "$RETURNED_WRITE_OUT" | grep "RETURNED_STATUS_CODE" | awk '{print $2}')
@@ -138,40 +153,37 @@ RETURNED_REDIRECT_URL=$(echo "$RETURNED_WRITE_OUT" | grep "RETURNED_REDIRECT_URL
 RETURNED_SIZE=$(echo "$RETURNED_WRITE_OUT" | grep "RETURNED_SIZE" | awk '{print $2}')
 RETURNED_LOAD_TIME=$(echo "$RETURNED_WRITE_OUT" | grep "RETURNED_LOAD_TIME" | awk '{print $2}')
 RETURNED_PAGE_TITLE=$(echo "$RETURNED_HTML" | htmlq --text "title")
-echo "----------------------------------------"
-echo "Fetching $URL"
-echo "----------------------------------------"
-echo "Status code: $RETURNED_STATUS_CODE"
-echo "Redirects to: $RETURNED_REDIRECT_URL"
-echo "Size: $RETURNED_SIZE"
-echo "Load time: $RETURNED_LOAD_TIME"
-echo "Page title: $RETURNED_PAGE_TITLE"
-
-echo "-------------"
-echo "Running Tests"
-echo "-------------"
+echo "### Fetching ${URL}${URL_PATH} ###"
+echo "> Status code: $RETURNED_STATUS_CODE"
+echo "> Redirects to: $RETURNED_REDIRECT_URL"
+echo "> Size: $RETURNED_SIZE"
+echo "> Load time: $RETURNED_LOAD_TIME"
+echo "> Page title: $RETURNED_PAGE_TITLE"
 
 # Test
 # - Check status code
 if [[ -n "$EXPECTING_STATUS_CODE" ]]; then
+	echo '-'
 	require_value_match --name="status code" --value="$RETURNED_STATUS_CODE" --match="$EXPECTING_STATUS_CODE"
 fi
 
 # Checks redirects
 if [[ -n "$EXPECTING_REDIRECTS_TO" ]]; then
-	require_value_match --name="redirects to" --value="$RETURNED_REDIRECT_URL" --match="$EXPECTING_REDIRECTS_TO"
+	echo '-'
+	require_value_match --name="redirects to" --value="$RETURNED_REDIRECT_URL" --match="${URL}${EXPECTING_REDIRECTS_TO}"
 fi
 
 # Check html elements
 if [[ -n "$EXPECTING_CSS_SELECTOR" ]]; then
-	echo "Selector $EXPECTING_CSS_SELECTOR"
 	for selector_text in "${EXPECTING_CSS_SELECTOR[@]}"; do
+		echo '-'
 		selector=$(echo "$selector_text" | perl -n -e "/(.*?)(?=:contains|$)/ && print \$1")
-		text=$(echo "$selector_text" | perl -n -e "/(?<=:contains\()[\"']?[^\"']*[\"']?(?=\))/ && print \$&")
+		text=$(echo "$selector_text" | perl -n -e "/(?<=:contains\()[\"']?([^\"']*)[\"']?(?=\))/ && print \$1")
 
 		RETURNED_ELEMENT=$(echo "$RETURNED_HTML" | htmlq "$selector")
 		require_value --name="CSS selector ($selector)" --value="$RETURNED_ELEMENT"
 		if [[ -n "$text" ]]; then
+			echo '-'
 			RETURNED_ELEMENT_TEXT=$(echo "$RETURNED_HTML" | htmlq --text "$selector")
 			require_value_match --name="CSS selector ($selector) text" --value="$RETURNED_ELEMENT_TEXT" --match="$text"
 		fi
