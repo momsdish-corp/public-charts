@@ -20,17 +20,24 @@ data:
     #       - jpg
     #       - png
     # Will run /plugins/downloader.sh --url="example.com" --path="/" --fetch="jpg" --fetch="png"
-    {{ if .Values.plugins }}
-      {{- range $plugin, $pluginValues := .Values.plugins }}
-        {{- if $pluginValues }}
-          {{- range $commandIndex, $commandObject := $pluginValues }}
-            /mnt/plugins/{{ $plugin }}.sh --url={{ $.Values.url | quote }}
+    set -x;
+    {{ if .Values.plugins -}}
+      {{- range $plugin, $pluginValues := .Values.plugins -}}
+        {{- if $pluginValues -}}
+          {{- range $commandIndex, $commandObject := $pluginValues -}}
+            {{- $cmd := printf "/mnt/plugins/%s.sh --url=%s" $plugin (urlquery $.Values.url) -}}
             {{- range $commandKey, $commandValue := $commandObject -}}
-              {{- if kindIs "slice" $commandValue }}
-                {{- range $optionIndex, $optionObject := $commandValue }} --{{ $commandKey }}={{ $optionObject | quote }}{{ end -}}
-              {{ else }} --{{ $commandKey }}={{ $commandValue | quote }}{{ end -}}
+              {{- if kindIs "slice" $commandValue -}}
+                {{- range $optionIndex, $optionObject := $commandValue -}}
+                  {{- $cmd = printf "%s --%s=%s" $cmd $commandKey (urlquery $optionObject) -}}
+                {{- end -}}
+              {{- else -}}
+                {{- $cmd = printf "%s --%s=%s" $cmd $commandKey (urlquery $commandValue) -}}
+              {{- end -}}
             {{- end -}}
-          {{- end }}
-        {{- end }}
-      {{- end }}
+            {{- printf "%s" $cmd | nindent 4 -}}
+          {{- end -}}
+        {{- end -}}
+      {{- end -}}
     {{- end }}
+    set +x;

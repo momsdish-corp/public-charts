@@ -2,14 +2,12 @@
 
 set -e
 
-echo "Executing command: $0 $*"
-
 # Print usage
 print_usage() {
   echo "Ths script runs a test on a website."
   echo
   echo "Usage: $(dirname "$0")/$(basename "$0") --url=\"https://localhost:8443\" --path=\"/about\" --statusCode=\"301\" --redirectsTo=\"https://localhost:8443/about/\""
-  echo "Usage: $(dirname "$0")/$(basename "$0") --url=\"https://localhost:8443/\" --cssSelector=\"title\" --text=\"My case-sensitive title!\""
+  echo "Usage: $(dirname "$0")/$(basename "$0") --url=\"https://localhost:8443/\" --cssSelector='title:contains(\"My case-sensitive title!\")'"
   echo "--url                (string) (required) URL to fetch"
   echo "--path               (string) (optional) Path, relative to the URL"
   echo "--statusCode         (number) (optional) Expected status code. Defaults to 200."
@@ -19,26 +17,6 @@ print_usage() {
   echo "--debug                       (optional) Show debug/verbose output"
   echo "--help                                   Help"
 }
-
-# Set defaults
-EXPECTING_STATUS_CODE=200
-WAIT_BEFORE_EXIT=1
-
-# Arguments handling
-while (( ${#} > 0 )); do
-  case "${1}" in
-    ( '--url='* ) URL="${1#*=}" ;;
-  	( '--path='* ) URL_PATH="${1#*=}" ;;
-  	( '--statusCode='* ) EXPECTING_STATUS_CODE="${1#*=}" ;;
-    ( '--redirectsTo='* ) EXPECTING_REDIRECTS_TO="${1#*=}" ;;
-    ( '--cssSelector='* ) EXPECTING_CSS_SELECTOR+=("${1#*=}") ;; # Store in an array
-    ( '--waitBeforeExit='* ) WAIT_BEFORE_EXIT="${1#*=}" ;;
-  	( '--debug' ) DEBUG=1 ;;
-    ( * ) print_usage
-          exit 1;;
-  esac
-  shift
-done
 
 #################
 ### Functions ###
@@ -64,6 +42,21 @@ show_timer() {
 	else
 		:
 	fi
+}
+
+return_url_decoded() {
+  # Usage: url_decode "string"
+  : "${*//+/ }"
+  printf '%b\n' "${_//%/\\x}"
+}
+
+return_number() {
+  local re='^[0-9]+$'
+  if [[ $1 =~ $re ]] ; then
+    echo "$1"
+  else
+    echo ""
+  fi
 }
 
 exit_message() {
@@ -120,6 +113,30 @@ require_value() {
 	fi
 }
 
+###############
+### Globals ###
+###############
+
+# Set defaults
+EXPECTING_STATUS_CODE=200
+WAIT_BEFORE_EXIT=1
+
+# Arguments handling
+while (( ${#} > 0 )); do
+  case "${1}" in
+    ( '--url='* ) URL="$(return_url_decoded "${1#*=}")" ;;
+  	( '--path='* ) URL_PATH="$(return_url_decoded "${1#*=}")" ;;
+  	( '--statusCode='* ) EXPECTING_STATUS_CODE="$(return_number "${1#*=}")" ;;
+    ( '--redirectsTo='* ) EXPECTING_REDIRECTS_TO="$(return_url_decoded "${1#*=}")" ;;
+    ( '--cssSelector='* ) EXPECTING_CSS_SELECTOR+=("$(return_url_decoded "${1#*=}")") ;; # Store in an array
+    ( '--waitBeforeExit='* ) WAIT_BEFORE_EXIT="$(return_number "${1#*=}")" ;;
+  	( '--debug' ) DEBUG=1 ;;
+    ( * ) print_usage
+          exit 1;;
+  esac
+  shift
+done
+
 ##############
 ### Script ###
 ##############
@@ -161,7 +178,7 @@ fi
 
 # Checks redirects
 if [[ -n "$EXPECTING_REDIRECTS_TO" ]]; then
-	require_value_match --name="redirects to" --value="$RETURNED_REDIRECT_URL" --match="$EXPECTING_REDIRECTS_TO"
+	require_value_match --name="redirects to" --value="$RETURNED_REDIRECT_URL" --match="${URL}${EXPECTING_REDIRECTS_TO}"
 fi
 
 # Check html elements
@@ -169,7 +186,7 @@ if [[ -n "$EXPECTING_CSS_SELECTOR" ]]; then
 	echo "Selector $EXPECTING_CSS_SELECTOR"
 	for selector_text in "${EXPECTING_CSS_SELECTOR[@]}"; do
 		selector=$(echo "$selector_text" | perl -n -e "/(.*?)(?=:contains|$)/ && print \$1")
-		text=$(echo "$selector_text" | perl -n -e "/(?<=:contains\()[\"']?[^\"']*[\"']?(?=\))/ && print \$&")
+		text=$(echo "$selector_text" | perl -n -e "/(?<=:contains\()[\"']?([^\"']*)[\"']?(?=\))/ && print \$1")
 
 		RETURNED_ELEMENT=$(echo "$RETURNED_HTML" | htmlq "$selector")
 		require_value --name="CSS selector ($selector)" --value="$RETURNED_ELEMENT"

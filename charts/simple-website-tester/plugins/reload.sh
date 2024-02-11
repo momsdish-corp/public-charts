@@ -2,8 +2,6 @@
 
 set -e
 
-echo "Executing command: $0 $*"
-
 # Print usage
 print_usage() {
   echo "Ths script reloads a path on a website."
@@ -17,26 +15,6 @@ print_usage() {
   echo "--debug                       (optional) Show debug/verbose output"
   echo "--help                                   Help"
 }
-
-# Set defaults
-INTERVAL_SECONDS=3
-WAIT_BEFORE_EXIT=1
-
-# Arguments handling
-while (( ${#} > 0 )); do
-  case "${1}" in
-    ( '--url='* ) URL="${1#*=}" ;;
-  	( '--path='* ) URL_PATH="${1#*=}" ;;
-  	( '--count='* ) COUNT="${1#*=}" ;;
-		( '--intervalSeconds='* ) INTERVAL_SECONDS="${1#*=}" ;;
-		( '--waitBeforeExit='* ) WAIT_BEFORE_EXIT="${1#*=}" ;;
-  	( '--debug' ) DEBUG=1 ;;
-    ( * ) print_usage
-          exit 1;;
-  esac
-  shift
-done
-
 
 #################
 ### Functions ###
@@ -56,6 +34,21 @@ start_timer() {
   START_TIME=$(date +%s)
 }
 
+return_url_decoded() {
+  # Usage: url_decode "string"
+  : "${*//+/ }"
+  printf '%b\n' "${_//%/\\x}"
+}
+
+return_number() {
+  local re='^[0-9]+$'
+  if [[ $1 =~ $re ]] ; then
+    echo "$1"
+  else
+    echo ""
+  fi
+}
+
 show_timer() {
 	if is_true "$DEBUG"; then
   	echo "$(($(date +%s)-START_TIME)) seconds passed since the start of script."
@@ -70,6 +63,29 @@ exit_message() {
     sleep "$WAIT_BEFORE_EXIT" && \
     exit 1
 }
+
+###############
+### Globals ###
+###############
+
+# Set defaults
+INTERVAL_SECONDS=3
+WAIT_BEFORE_EXIT=1
+
+# Arguments handling
+while (( ${#} > 0 )); do
+  case "${1}" in
+    ( '--url='* ) URL="$(return_url_decoded "${1#*=}")" ;;
+  	( '--path='* ) URL_PATH="$(return_url_decoded "${1#*=}")" ;;
+ 		( '--count='* ) COUNT="$(return_number "${1#*=}")" ;;
+		( '--intervalSeconds='* ) INTERVAL_SECONDS="$(return_number "${1#*=}")" ;;
+		( '--waitBeforeExit='* ) WAIT_BEFORE_EXIT="$(return_number "${1#*=}")" ;;
+  	( '--debug' ) DEBUG=1 ;;
+    ( * ) print_usage
+          exit 1;;
+  esac
+  shift
+done
 
 ##############
 ### Script ###
