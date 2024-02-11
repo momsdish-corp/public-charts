@@ -44,6 +44,7 @@ data:
           {{- end -}}
         {{- end -}}
       {{- end -}}
+      {{ printf "echo; echo 'All tests have successfully passed!'" | nindent 4 -}}
     {{- end }}
     {{- if .Values.debug -}}
       {{- printf "set +x;" | nindent 4 -}}
