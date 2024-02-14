@@ -85,11 +85,20 @@ spec:
           # Cut out the YYYY/MM/ from the filename, if it exists
           DESTINATION="$(echo "$OBJECT_STORAGE_SOURCE" | sed -e 's~^[0-9]\{4\}/[0-9]\{2\}/~~')"
 
+          # If doens't end with /, it's a file. If it does, it's a directory
+          if [[ ! "$OBJECT_STORAGE_SOURCE" =~ /$ ]]; then
+            RECURSIVE_FLAG=""
+            echo "Downloading file ${DESTINATION} from s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/${OBJECT_STORAGE_SOURCE} object storage..."
+          else
+            RECURSIVE_FLAG="--recursive"
+            echo "Downloading directory from s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/${OBJECT_STORAGE_SOURCE} object storage..."
+          fi
+
           # Download the filename from the object storage bucket
           if [ "$NO_VERIFY_SSL" == "true" ]; then
-            aws --endpoint-url="https://${OBJECT_STORAGE_ENDPOINT}" s3 cp --no-verify-ssl --recursive "s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/${OBJECT_STORAGE_SOURCE}" "/files/${DESTINATION}"
+            aws --endpoint-url="https://${OBJECT_STORAGE_ENDPOINT}" s3 cp --no-verify-ssl $RECURSIVE_FLAG "s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/${OBJECT_STORAGE_SOURCE}" "/files/${DESTINATION}"
           else
-            aws --endpoint-url="https://${OBJECT_STORAGE_ENDPOINT}" s3 cp --recursive "s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/${OBJECT_STORAGE_SOURCE}" "/files/${DESTINATION}"
+            aws --endpoint-url="https://${OBJECT_STORAGE_ENDPOINT}" s3 cp $RECURSIVE_FLAG "s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/${OBJECT_STORAGE_SOURCE}" "/files/${DESTINATION}"
           fi
           echo "${DESTINATION}" > /files/.last-pull
 
