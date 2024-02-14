@@ -83,8 +83,10 @@ spec:
           SUBDIR="$(date +%Y)/$(date +%m)"
 
           if [ -f "/files/${OBJECT_STORAGE_SOURCE}" ]; then
+            RECURSIVE_FLAG=""
             echo "Uploading ${OBJECT_STORAGE_SOURCE} to s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/$SUBDIR object storage..."
           else
+            RECURSIVE_FLAG="--recursive"
             echo "Uploading the following files to s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/$SUBDIR/${OBJECT_STORAGE_SOURCE} object storage..."
             ls -la /files/${OBJECT_STORAGE_SOURCE}
           fi
@@ -108,9 +110,9 @@ spec:
           # Upload the source to the object storage bucket
           echo "Uploading to object storage..."
           if [ "$NO_VERIFY_SSL" == "true" ]; then
-            aws --endpoint-url="https://${OBJECT_STORAGE_ENDPOINT}" s3 cp --no-verify-ssl --recursive "/files/${OBJECT_STORAGE_SOURCE}" "s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/$SUBDIR/${OBJECT_STORAGE_SOURCE}"
+            aws --endpoint-url="https://${OBJECT_STORAGE_ENDPOINT}" s3 cp --no-verify-ssl $RECURSIVE_FLAG "/files/${OBJECT_STORAGE_SOURCE}" "s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/$SUBDIR/${OBJECT_STORAGE_SOURCE}"
           else
-            aws --endpoint-url="https://${OBJECT_STORAGE_ENDPOINT}" s3 cp --recursive "/files/${OBJECT_STORAGE_SOURCE}" "s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/$SUBDIR/${OBJECT_STORAGE_SOURCE}"
+            aws --endpoint-url="https://${OBJECT_STORAGE_ENDPOINT}" s3 cp $RECURSIVE_FLAG "/files/${OBJECT_STORAGE_SOURCE}" "s3://${OBJECT_STORAGE_BUCKET}/${OBJECT_STORAGE_DIR}/$SUBDIR/${OBJECT_STORAGE_SOURCE}"
           fi
           # Update .last-push file with the source
           echo "Updating .last-push file with the source..."
