@@ -2,20 +2,6 @@
 
 set -e
 
-# Print usage
-print_usage() {
-  echo "Ths script reloads a path on a website."
-  echo
-  echo "Usage: $(dirname "$0")/$(basename "$0") --url=\"https://localhost:8443\" --path=\"/some-path\" --count=\"3\" --intervalSeconds=\"5\""
-  echo "--baseURL            (string) (required) URL to fetch"
-  echo "--waitBeforeExit     (number) (optional) Wait time in seconds before exiting the script. Default is 1 second."
-  echo "--path               (string) (optional) Path, relative to the URL"
-  echo "--count							 (number) (optional) Number of times to reload. Default is 1."
-  echo "--intervalSeconds    (number) (optional) Interval in seconds between reloads. Default is 3 seconds."
-  echo "--debug                       (optional) Show debug/verbose output"
-  echo "--help                                   Help"
-}
-
 #################
 ### Functions ###
 #################
@@ -36,6 +22,14 @@ start_timer() {
 
 show_timer() {
 	is_true "$DEBUG" && echo "$(($(date +%s)-START_TIME)) seconds passed since the start of script." || true
+}
+
+return_url_encoded() {
+  # Usage: url_encode "string"
+  printf '%s\n' "$1" | awk -v ORS="" '{ gsub(/./,"&\n") ; print }' | while read -r line ; do
+    printf %s "${line}" | grep -q "[^-._~0-9a-zA-Z]" && printf '%%%02X' "'${line}" || printf %s "${line}"
+  done
+  printf '\n'
 }
 
 return_url_decoded() {
@@ -63,6 +57,21 @@ exit_message() {
 ###############
 ### Globals ###
 ###############
+
+# Print usage
+print_usage() {
+  echo "Description:"
+  echo "Ths script reloads a path on a website. All passed flag values must be URL encoded."
+  echo
+  echo "Usage: $(dirname "$0")/$(basename "$0") --baseURL=\"$(return_url_encoded https://localhost:8443)\" --path=\"$(return_url_encoded /some-path)\" --count=\"$(return_url_encoded 3)\" --intervalSeconds=\"$(return_url_encoded 5)\""
+  echo "--baseURL            (string) (required) URL to fetch"
+  echo "--waitBeforeExit     (number) (optional) Wait time in seconds before exiting the script. Default is 1 second."
+  echo "--path               (string) (optional) Path, relative to the URL"
+  echo "--count							 (number) (optional) Number of times to reload. Default is 1."
+  echo "--intervalSeconds    (number) (optional) Interval in seconds between reloads. Default is 3 seconds."
+  echo "--debug                       (optional) Show debug/verbose output"
+  echo "--help                                   Help"
+}
 
 # Set defaults
 INTERVAL_SECONDS=3

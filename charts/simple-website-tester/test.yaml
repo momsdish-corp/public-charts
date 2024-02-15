@@ -1,6 +1,6 @@
 baseURL: https://example.com
 waitBeforeExit: 5
-debug: false
+debug: true
 plugins:
   reload:
     - path: /

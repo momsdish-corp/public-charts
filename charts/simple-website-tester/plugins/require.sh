@@ -2,22 +2,6 @@
 
 set -e
 
-# Print usage
-print_usage() {
-  echo "Ths script runs a test on a website."
-  echo
-  echo "Usage: $(dirname "$0")/$(basename "$0") --url=\"https://localhost:8443\" --path=\"/about\" --statusCode=\"301\" --redirectsTo=\"https://localhost:8443/about/\""
-  echo "Usage: $(dirname "$0")/$(basename "$0") --url=\"https://localhost:8443/\" --cssSelector='title:contains(\"My case-sensitive title!\")'"
-  echo "--baseURL            (string) (required) URL to fetch"
-  echo "--path               (string) (optional) Path, relative to the URL"
-  echo "--statusCode         (number) (optional) Expected status code. Defaults to 200."
-  echo "--redirectsTo        (string) (optional) Full URL of the expected redirect."
-  echo "--cssSelector        (string) (optional) CSS selector to require. Append :contains(text) to require a specific text. Allows for multiple selectors."
-  echo "--waitBeforeExit     (number) (optional) Wait time in seconds before exiting the script. Default is 1 second."
-  echo "--debug                       (optional) Show debug/verbose output"
-  echo "--help                                   Help"
-}
-
 #################
 ### Functions ###
 #################
@@ -38,6 +22,14 @@ start_timer() {
 
 show_timer() {
 	is_true "$DEBUG" && echo "$(($(date +%s)-START_TIME)) seconds passed since the start of script." || true
+}
+
+return_url_encoded() {
+  # Usage: url_encode "string"
+  printf '%s\n' "$1" | awk -v ORS="" '{ gsub(/./,"&\n") ; print }' | while read -r line ; do
+    printf %s "${line}" | grep -q "[^-._~0-9a-zA-Z]" && printf '%%%02X' "'${line}" || printf %s "${line}"
+  done
+  printf '\n'
 }
 
 return_url_decoded() {
@@ -112,6 +104,23 @@ require_value() {
 ###############
 ### Globals ###
 ###############
+
+# Print usage
+print_usage() {
+  echo "Description:"
+  echo "Ths script runs a test on a web page. All passed flag values must be URL encoded."
+  echo
+  echo "Usage: $(dirname "$0")/$(basename "$0") --baseURL=\"$(return_url_encoded https://localhost:8443)\" --path=\"$(return_url_encoded /about)\" --statusCode=\"$(return_url_encoded 301)\" --redirectsTo=\"$(return_url_encoded https://localhost:8443/about/)\""
+  echo "Usage: $(dirname "$0")/$(basename "$0") --baseURL=\"$(return_url_encoded https://localhost:8443/)\" --cssSelector=$(return_url_encoded 'title:contains(\"My case-sensitive title!\")')"
+  echo "--baseURL            (string) (required) URL to fetch"
+  echo "--path               (string) (optional) Path, relative to the URL"
+  echo "--statusCode         (number) (optional) Expected status code. Defaults to 200."
+  echo "--redirectsTo        (string) (optional) Full URL of the expected redirect."
+  echo "--cssSelector        (string) (optional) CSS selector to require. Append :contains(text) to require a specific text. Allows for multiple selectors."
+  echo "--waitBeforeExit     (number) (optional) Wait time in seconds before exiting the script. Default is 1 second."
+  echo "--debug                       (optional) Show debug/verbose output"
+  echo "--help                                   Help"
+}
 
 # Set defaults
 EXPECTING_STATUS_CODE=200
