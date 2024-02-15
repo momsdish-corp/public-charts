@@ -1,0 +1,22 @@
+baseURL: https://example.com
+waitBeforeExit: 5
+debug: false
+plugins:
+  reload:
+    - path: /
+      count: 3
+      intervalSeconds: 5
+  require:
+    # By default, this will expect status code 200
+    - path: /
+      statusCode: 200
+      cssSelector:
+        - 'title:contains("Example Domain")'
+        - 'body'
+    # Check for a specific status code & title of the page
+    - path: /this-path-should-not-exist
+      statusCode: 404
+    # Check to make sure a correct redirect is in place, both the status code and the redirect URL
+    - path: /about/
+      statusCode: 301
+      redirectsTo: /about

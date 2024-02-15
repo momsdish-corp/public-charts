@@ -1,7 +1,7 @@
 ## Description
 Run automated website tests, set in values.yaml. Check URLs against status codes, expected CSS selectors, redirects.
 
-Refer to the values.yaml for example usage.
+Refer to the test.yaml for example usage.
 
 ## Our Use Case
 We use this in-house to test our website after each update, before deploying to production. This way all updates are 

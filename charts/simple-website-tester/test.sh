@@ -3,7 +3,8 @@
 # Apply the chart
 helm upgrade --install simple-website-tester . \
   --namespace=simple-website-tester \
-  --create-namespace
+  --create-namespace \
+  --values test.yaml
 
 # Wait for the pod to be ready
 kubectl --namespace=simple-website-tester wait --for=condition=ready pod --selector=app.kubernetes.io/name=simple-website-tester --timeout=120s
