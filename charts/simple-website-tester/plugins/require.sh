@@ -2,22 +2,6 @@
 
 set -e
 
-# Print usage
-print_usage() {
-  echo "Ths script runs a test on a website."
-  echo
-  echo "Usage: $(dirname "$0")/$(basename "$0") --url=\"https://localhost:8443\" --path=\"/about\" --statusCode=\"301\" --redirectsTo=\"https://localhost:8443/about/\""
-  echo "Usage: $(dirname "$0")/$(basename "$0") --url=\"https://localhost:8443/\" --cssSelector='title:contains(\"My case-sensitive title!\")'"
-  echo "--url                (string) (required) URL to fetch"
-  echo "--path               (string) (optional) Path, relative to the URL"
-  echo "--statusCode         (number) (optional) Expected status code. Defaults to 200."
-  echo "--redirectsTo        (string) (optional) Full URL of the expected redirect."
-  echo "--cssSelector        (string) (optional) CSS selector to require. Append :contains(text) to require a specific text. Allows for multiple selectors."
-  echo "--waitBeforeExit     (number) (optional) Wait time in seconds before exiting the script. Default is 1 second."
-  echo "--debug                       (optional) Show debug/verbose output"
-  echo "--help                                   Help"
-}
-
 #################
 ### Functions ###
 #################
@@ -38,6 +22,14 @@ start_timer() {
 
 show_timer() {
 	is_true "$DEBUG" && echo "$(($(date +%s)-START_TIME)) seconds passed since the start of script." || true
+}
+
+return_url_encoded() {
+  # Usage: url_encode "string"
+  printf '%s\n' "$1" | awk -v ORS="" '{ gsub(/./,"&\n") ; print }' | while read -r line ; do
+    printf %s "${line}" | grep -q "[^-._~0-9a-zA-Z]" && printf '%%%02X' "'${line}" || printf %s "${line}"
+  done
+  printf '\n'
 }
 
 return_url_decoded() {
@@ -113,6 +105,23 @@ require_value() {
 ### Globals ###
 ###############
 
+# Print usage
+print_usage() {
+  echo "Description:"
+  echo "Ths script runs a test on a web page. All passed flag values must be URL encoded."
+  echo
+  echo "Usage: $(dirname "$0")/$(basename "$0") --baseURL=\"$(return_url_encoded https://localhost:8443)\" --path=\"$(return_url_encoded /about)\" --statusCode=\"$(return_url_encoded 301)\" --redirectsTo=\"$(return_url_encoded https://localhost:8443/about/)\""
+  echo "Usage: $(dirname "$0")/$(basename "$0") --baseURL=\"$(return_url_encoded https://localhost:8443/)\" --cssSelector=$(return_url_encoded 'title:contains(\"My case-sensitive title!\")')"
+  echo "--baseURL            (string) (required) URL to fetch"
+  echo "--path               (string) (optional) Path, relative to the URL"
+  echo "--statusCode         (number) (optional) Expected status code. Defaults to 200."
+  echo "--redirectsTo        (string) (optional) Full URL of the expected redirect."
+  echo "--cssSelector        (string) (optional) CSS selector to require. Append :contains(text) to require a specific text. Allows for multiple selectors."
+  echo "--waitBeforeExit     (number) (optional) Wait time in seconds before exiting the script. Default is 1 second."
+  echo "--debug                       (optional) Show debug/verbose output"
+  echo "--help                                   Help"
+}
+
 # Set defaults
 EXPECTING_STATUS_CODE=200
 WAIT_BEFORE_EXIT=1
@@ -120,12 +129,12 @@ WAIT_BEFORE_EXIT=1
 # Arguments handling
 while (( ${#} > 0 )); do
   case "${1}" in
-    ( '--url='* ) URL="$(return_url_decoded "${1#*=}")" ;;
+    ( '--baseURL='* ) BASE_URL="$(return_url_decoded "${1#*=}")" ;;
+    ( '--waitBeforeExit='* ) WAIT_BEFORE_EXIT="$(return_number "${1#*=}")" ;;
   	( '--path='* ) URL_PATH="$(return_url_decoded "${1#*=}")" ;;
   	( '--statusCode='* ) EXPECTING_STATUS_CODE="$(return_number "${1#*=}")" ;;
     ( '--redirectsTo='* ) EXPECTING_REDIRECTS_TO="$(return_url_decoded "${1#*=}")" ;;
     ( '--cssSelector='* ) EXPECTING_CSS_SELECTOR+=("$(return_url_decoded "${1#*=}")") ;; # Store in an array
-    ( '--waitBeforeExit='* ) WAIT_BEFORE_EXIT="$(return_number "${1#*=}")" ;;
   	( '--debug' ) DEBUG=1 ;;
     ( * ) print_usage
           exit 1;;
@@ -140,12 +149,12 @@ done
 start_timer
 
 # Validate
-if [[ -z "$URL" ]]; then
-  exit_message "URL is required."
+if [[ -z "$BASE_URL" ]]; then
+  exit_message "BASE_URL is required."
 fi
 
 # Get the basic information of the URL
-RETURNED_CURL=$(curl --connect-timeout 5 --max-time 10 --insecure --silent --write-out "\n---BEGIN WRITE-OUT---\nRETURNED_STATUS_CODE: %{response_code}\nRETURNED_REDIRECT_URL: %{redirect_url}\nRETURNED_SIZE: %{size_download}\nRETURNED_LOAD_TIME: %{time_total}\n" "${URL}${URL_PATH}" 2>/dev/null)
+RETURNED_CURL=$(curl --connect-timeout 5 --max-time 10 --insecure --silent --write-out "\n---BEGIN WRITE-OUT---\nRETURNED_STATUS_CODE: %{response_code}\nRETURNED_REDIRECT_URL: %{redirect_url}\nRETURNED_SIZE: %{size_download}\nRETURNED_LOAD_TIME: %{time_total}\n" "${BASE_URL}${URL_PATH}" 2>/dev/null)
 RETURNED_HTML=$(echo "$RETURNED_CURL" | perl -pe 'last if /---BEGIN WRITE-OUT---/')
 RETURNED_WRITE_OUT=$(echo "$RETURNED_CURL" | perl -0777 -pe 's/.*?---BEGIN WRITE-OUT---\n//s')
 RETURNED_STATUS_CODE=$(echo "$RETURNED_WRITE_OUT" | grep "RETURNED_STATUS_CODE" | awk '{print $2}')
@@ -153,7 +162,7 @@ RETURNED_REDIRECT_URL=$(echo "$RETURNED_WRITE_OUT" | grep "RETURNED_REDIRECT_URL
 RETURNED_SIZE=$(echo "$RETURNED_WRITE_OUT" | grep "RETURNED_SIZE" | awk '{print $2}')
 RETURNED_LOAD_TIME=$(echo "$RETURNED_WRITE_OUT" | grep "RETURNED_LOAD_TIME" | awk '{print $2}')
 RETURNED_PAGE_TITLE=$(echo "$RETURNED_HTML" | htmlq --text "title")
-echo "### Fetching ${URL}${URL_PATH} ###"
+echo "### Fetching ${BASE_URL}${URL_PATH} ###"
 echo "> Status code: $RETURNED_STATUS_CODE"
 echo "> Redirects to: $RETURNED_REDIRECT_URL"
 echo "> Size: $RETURNED_SIZE"
@@ -170,7 +179,7 @@ fi
 # Checks redirects
 if [[ -n "$EXPECTING_REDIRECTS_TO" ]]; then
 	echo '-'
-	require_value_match --name="redirects to" --value="$RETURNED_REDIRECT_URL" --match="${URL}${EXPECTING_REDIRECTS_TO}"
+	require_value_match --name="redirects to" --value="$RETURNED_REDIRECT_URL" --match="${BASE_URL}${EXPECTING_REDIRECTS_TO}"
 fi
 
 # Check html elements

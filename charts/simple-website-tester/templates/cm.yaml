@@ -12,14 +12,16 @@ data:
     sleep 5
 
     # Example:
-    # url: example.com
+    # baseURL: https://example.com
+    # waitBeforeExit: 5
     # plugins:
     #   downloader:
     #   - path: /
     #     fetch:
     #       - jpg
     #       - png
-    # Will run /plugins/downloader.sh --url="example.com" --path="/" --fetch="jpg" --fetch="png"
+    # Will run /plugins/downloader.sh --baseURL="https://example.com" --waitBeforeExit=5 --path="/" --fetch="jpg" --fetch="png"
+    # With all values URL encoded.
     {{- if .Values.debug -}}
       {{- printf "set -x;" | nindent 4 -}}
     {{- end -}}
@@ -27,7 +29,7 @@ data:
       {{- range $plugin, $pluginValues := .Values.plugins -}}
         {{- if $pluginValues -}}
           {{- range $commandIndex, $commandObject := $pluginValues -}}
-            {{- $cmd := printf "/mnt/plugins/%s.sh --url=%s" $plugin (urlquery $.Values.url) -}}
+            {{- $cmd := printf "/mnt/plugins/%s.sh --baseURL=%s --waitBeforeExit=%s" $plugin (urlquery $.Values.baseURL) (urlquery $.Values.waitBeforeExit) -}}
             {{- if $.Values.debug -}}
               {{- $cmd = printf "%s --debug" $cmd -}}
             {{- end -}}
