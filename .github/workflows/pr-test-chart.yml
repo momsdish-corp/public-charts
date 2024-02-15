@@ -83,6 +83,9 @@ jobs:
             --image docker.io/rancher/k3s:${{ env.K3S_VERSION }}
       - name: Run the test script
         run: |
+          # Wait 5 more seconds, as the cluster serviceaccounts take a bit longer to get created. 
+          echo "Waiting 5 more seconds to ensure the cluster is ready..."
+          sleep 5
           cd ${{ matrix.CONTAINER_DIR }}
           echo "Running test.sh"
           ./test.sh
