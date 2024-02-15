@@ -27,7 +27,7 @@ data:
       {{- range $plugin, $pluginValues := .Values.plugins -}}
         {{- if $pluginValues -}}
           {{- range $commandIndex, $commandObject := $pluginValues -}}
-            {{- $cmd := printf "/mnt/plugins/%s.sh --url=%s" $plugin (urlquery $.Values.url) -}}
+            {{- $cmd := printf "/mnt/plugins/%s.sh --url=%s --waitBeforeExit=%s" $plugin (urlquery $.Values.baseURL) (urlquery $.Values.waitBeforeExit) -}}
             {{- if $.Values.debug -}}
               {{- $cmd = printf "%s --debug" $cmd -}}
             {{- end -}}

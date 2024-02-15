@@ -1,4 +1,5 @@
-website: https://example.com
+baseURL: https://example.com
+waitBeforeExit: 5
 debug: false
 plugins:
 #  reload:
