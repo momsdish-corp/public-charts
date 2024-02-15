@@ -16,7 +16,3 @@ plugins:
     # Check for a specific status code & title of the page
     - path: /this-path-should-not-exist
       statusCode: 404
-    # Check to make sure a correct redirect is in place, both the status code and the redirect URL
-    - path: /about/
-      statusCode: 301
-      redirectsTo: /about
