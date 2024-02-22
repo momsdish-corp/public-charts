@@ -36,7 +36,7 @@ helm upgrade --install object-storage-pull . \
   --set container.env.OBJECT_STORAGE_ENDPOINT=minio.minio.svc.cluster.local:9000 \
   --set container.env.OBJECT_STORAGE_BUCKET=mybucket \
   --set container.env.OBJECT_STORAGE_DIR=subfolder \
-  --set container.env.OBJECT_STORAGE_SOURCE="object-storage-pull"
+  --set container.env.OBJECT_STORAGE_SOURCE="object-storage-pull/"
 
 # Wait for the object-storage-pull pod to start
 sleep 10
