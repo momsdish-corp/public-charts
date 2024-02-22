@@ -1,3 +1,6 @@
+generateName: false
+forceRecreate: false
+
 baseURL: ''
 waitBeforeExit: 5
 debug: false
