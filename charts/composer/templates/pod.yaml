@@ -8,8 +8,8 @@ metadata:
     app.kubernetes.io/name: {{ .Release.Name | quote }}
     app.kubernetes.io/instance: composer
   annotations:
-    # Force helm to recreate the pod on upgrade
-    checksum.helm.recreate: "{{- if .Values.recreateHelm }}{{ randAlphaNum 10 }}{{- end }}"
+    # Force recreate the pod on upgrade
+    checksum.force.recreate: "{{- if .Values.forceRecreate }}{{ randAlphaNum 10 }}{{- end }}"
 spec:
   containers:
     - name: composer

@@ -1,5 +1,5 @@
 generateName: false
-recreateHelm: false
+forceRecreate: false
 container:
   env: {}
   #  env:
