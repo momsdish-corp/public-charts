@@ -69,7 +69,7 @@ require_value_match() {
 		shift
 	done
 
-	echo "Requiring $name: $match"
+	echo "Requiring $name to match: $match"
 
 	if [[ "$value" == "$match" ]]; then
 		echo "Test passed!"
@@ -101,6 +101,53 @@ require_value() {
 	fi
 }
 
+require_value_no_match() {
+  is_true "$DEBUG" && echo "Executing require_value_no_match()" || true
+
+  local 'name' 'value' 'match'
+
+  # Arguments handling
+  while (( ${#} > 0 )); do
+    case "${1}" in
+      ( '--name='* ) name="${1#*=}" ;;
+      ( '--value='* ) value="${1#*=}" ;;
+      ( '--match='* ) match="${1#*=}" ;;
+    esac
+    shift
+  done
+
+  echo "Requiring $name not to match: $match"
+
+  if [[ "$value" != "$match" ]]; then
+    echo "Test passed!"
+  else
+    exit_message "Test failed!"
+  fi
+}
+
+require_no_value() {
+  is_true "$DEBUG" && echo "Executing require_no_value()" || true
+
+  local 'name' 'value'
+
+  # Arguments handling
+  while (( ${#} > 0 )); do
+    case "${1}" in
+      ( '--name='* ) name="${1#*=}" ;;
+      ( '--value='* ) value="${1#*=}" ;;
+    esac
+    shift
+  done
+
+  echo "Requiring $name not to exist"
+
+  if [[ -z "$value" ]]; then
+    echo "Test passed!"
+  else
+    exit_message "Test failed!"
+  fi
+}
+
 ###############
 ### Globals ###
 ###############
@@ -111,12 +158,13 @@ print_usage() {
   echo "Ths script runs a test on a web page. All passed flag values must be URL encoded."
   echo
   echo "Usage: $(dirname "$0")/$(basename "$0") --baseURL=\"$(return_url_encoded https://localhost:8443)\" --path=\"$(return_url_encoded /about)\" --statusCode=\"$(return_url_encoded 301)\" --redirectsTo=\"$(return_url_encoded https://localhost:8443/about/)\""
-  echo "Usage: $(dirname "$0")/$(basename "$0") --baseURL=\"$(return_url_encoded https://localhost:8443/)\" --cssSelector=$(return_url_encoded 'title:contains(\"My case-sensitive title!\")')"
-  echo "--baseURL            (string) (required) URL to fetch"
-  echo "--path               (string) (optional) Path, relative to the URL"
+  echo "Usage: $(dirname "$0")/$(basename "$0") --baseURL=\"$(return_url_encoded https://localhost:8443/)\" --cssSelector=$(return_url_encoded 'title:text(\"My case-sensitive title!\")')"
+  echo "--baseURL            (string) (required) URL to fetch, including the protocol and port."
+  echo "--path               (string) (optional) Path, relative to the URL."
   echo "--statusCode         (number) (optional) Expected status code. Defaults to 200."
   echo "--redirectsTo        (string) (optional) Full URL of the expected redirect."
-  echo "--cssSelector        (string) (optional) CSS selector to require. Append :contains(text) to require a specific text. Allows for multiple selectors."
+  echo "--cssSelector        (string) (optional) CSS selector to require. Append :text(text) to require a specific text. Allows for multiple selectors."
+  echo "--antiCssSelector    (string) (optional) CSS selector to require not to exist. Append :text(text) to require a specific text not to exist (this does not require a text containing element to exist). Allows for multiple selectors."
   echo "--waitBeforeExit     (number) (optional) Wait time in seconds before exiting the script. Default is 1 second."
   echo "--debug                       (optional) Show debug/verbose output"
   echo "--help                                   Help"
@@ -135,6 +183,7 @@ while (( ${#} > 0 )); do
   	( '--statusCode='* ) EXPECTING_STATUS_CODE="$(return_number "${1#*=}")" ;;
     ( '--redirectsTo='* ) EXPECTING_REDIRECTS_TO="$(return_url_decoded "${1#*=}")" ;;
     ( '--cssSelector='* ) EXPECTING_CSS_SELECTOR+=("$(return_url_decoded "${1#*=}")") ;; # Store in an array
+    ( '--antiCssSelector='* ) EXPECTING_ANTI_CSS_SELECTOR+=("$(return_url_decoded "${1#*=}")") ;; # Store in an array
   	( '--debug' ) DEBUG=1 ;;
     ( * ) print_usage
           exit 1;;
@@ -150,7 +199,7 @@ start_timer
 
 # Validate
 if [[ -z "$BASE_URL" ]]; then
-  exit_message "BASE_URL is required."
+  exit_message "Missing --baseURL flag. Try --help for more information."
 fi
 
 # Get the basic information of the URL
@@ -186,17 +235,37 @@ fi
 if [[ -n "$EXPECTING_CSS_SELECTOR" ]]; then
 	for selector_text in "${EXPECTING_CSS_SELECTOR[@]}"; do
 		echo '-'
-		selector=$(echo "$selector_text" | perl -n -e "/(.*?)(?=:contains|$)/ && print \$1")
-		text=$(echo "$selector_text" | perl -n -e "/(?<=:contains\()[\"']?([^\"']*)[\"']?(?=\))/ && print \$1")
+		selector=$(echo "$selector_text" | perl -n -e "/(.*?)(?=:text|$)/ && print \$1")
+		text=$(echo "$selector_text" | perl -n -e "/(?<=:text\()[\"']?([^\"']*)[\"']?(?=\))/ && print \$1")
 
-		RETURNED_ELEMENT=$(echo "$RETURNED_HTML" | htmlq "$selector")
-		require_value --name="CSS selector ($selector)" --value="$RETURNED_ELEMENT"
-		if [[ -n "$text" ]]; then
-			echo '-'
+		if [[ -z "$text" ]]; then
+		  # If text is empty, check for the existence of the element
+		  RETURNED_ELEMENT=$(echo "$RETURNED_HTML" | htmlq "$selector")
+		  require_value --name="CSS selector ($selector)" --value="$RETURNED_ELEMENT"
+    else
+      # If text is not empty, check for the existence of the element and its text
 			RETURNED_ELEMENT_TEXT=$(echo "$RETURNED_HTML" | htmlq --text "$selector")
 			require_value_match --name="CSS selector ($selector) text" --value="$RETURNED_ELEMENT_TEXT" --match="$text"
 		fi
 	done
+fi
+
+# Check html elements not to have
+if [[ -n "$EXPECTING_ANTI_CSS_SELECTOR" ]]; then
+  for selector_text in "${EXPECTING_ANTI_CSS_SELECTOR[@]}"; do
+    echo '-'
+    selector=$(echo "$selector_text" | perl -n -e "/(.*?)(?=:text|$)/ && print \$1")
+    text=$(echo "$selector_text" | perl -n -e "/(?<=:text\()[\"']?([^\"']*)[\"']?(?=\))/ && print \$1")
+
+    if [[ -z "$text" ]]; then
+      # If text is empty, check for the existence of the element
+      RETURNED_ELEMENT=$(echo "$RETURNED_HTML" | htmlq "$selector")
+      require_no_value --name="CSS selector ($selector)" --value="$RETURNED_ELEMENT"
+    else
+      RETURNED_ELEMENT_TEXT=$(echo "$RETURNED_HTML" | htmlq --text "$selector")
+      require_value_no_match --name="CSS selector ($selector) text" --value="$RETURNED_ELEMENT_TEXT" --match="$text"
+    fi
+  done
 fi
 
 show_timer

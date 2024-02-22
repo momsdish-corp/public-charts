@@ -11,8 +11,10 @@ plugins:
     - path: /
       statusCode: 200
       cssSelector:
-        - 'title:contains("Example Domain")'
+        - 'title:text("Example Domain")'
         - 'body'
+      antiCssSelector:
+        - 'title:text("Random name")'
     # Check for a specific status code & title of the page
     - path: /this-path-should-not-exist
       statusCode: 404

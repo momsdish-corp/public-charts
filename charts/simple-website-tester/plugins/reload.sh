@@ -64,7 +64,7 @@ print_usage() {
   echo "Ths script reloads a path on a website. All passed flag values must be URL encoded."
   echo
   echo "Usage: $(dirname "$0")/$(basename "$0") --baseURL=\"$(return_url_encoded https://localhost:8443)\" --path=\"$(return_url_encoded /some-path)\" --count=\"$(return_url_encoded 3)\" --intervalSeconds=\"$(return_url_encoded 5)\""
-  echo "--baseURL            (string) (required) URL to fetch"
+  echo "--baseURL            (string) (required) URL to fetch, including the protocol and port."
   echo "--waitBeforeExit     (number) (optional) Wait time in seconds before exiting the script. Default is 1 second."
   echo "--path               (string) (optional) Path, relative to the URL"
   echo "--count							 (number) (optional) Number of times to reload. Default is 1."
@@ -100,7 +100,7 @@ start_timer
 
 # Validate
 if [[ -z "$BASE_URL" ]]; then
-  exit_message "BASE_URL is required."
+  exit_message "Missing --baseURL flag. Try --help for more information."
 fi
 
 # Plural/Singular
