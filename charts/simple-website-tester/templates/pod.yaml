@@ -2,11 +2,17 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: {{ .Release.Name }}-pod
+  name: "{{ .Release.Name }}-pod{{- if .Values.generateName }}-{{ randAlphaNum 5 | nospace | lower }}{{- end }}"
   namespace: {{ .Release.Namespace | quote }}
   labels:
     app.kubernetes.io/name: {{ .Release.Name | quote }}
     app.kubernetes.io/instance: simple-website-tester
+  annotations:
+    # Trigger restart on file changes
+    checksum.templates.cm.yaml: {{ include (print $.Template.BasePath "/cm.yaml") . | sha256sum }}
+    checksum.templates.plugins-cm.yaml: {{ include (print $.Template.BasePath "/plugins-cm.yaml") . | sha256sum }}
+    # Force recreate the pod on upgrade
+    checksum.force.recreate: "{{- if .Values.forceRecreate }}{{ randAlphaNum 10 }}{{- end }}"
 spec:
   containers:
     - name: simple-website-tester
