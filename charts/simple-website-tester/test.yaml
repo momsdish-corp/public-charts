@@ -13,6 +13,8 @@ plugins:
       cssSelector:
         - 'title:contains("Example Domain")'
         - 'body'
+      antiCssSelector:
+        - 'title:contains("Random name")'
     # Check for a specific status code & title of the page
     - path: /this-path-should-not-exist
       statusCode: 404
