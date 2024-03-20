@@ -20,10 +20,10 @@ sleep 10
 
 # Upload some directory to the bucket before testing
 MINIO_POD="$(kubectl --namespace=minio get pods -l app.kubernetes.io/name=minio -o jsonpath="{.items[0].metadata.name}")"
-kubectl --namespace minio cp ../object-storage-pull "$MINIO_POD":/tmp
+kubectl --namespace minio cp ../object-storage-pull/README.md "$MINIO_POD":/tmp
 kubectl --namespace=minio exec "$MINIO_POD" -- bash -c "echo 'object-storage-pull' > /tmp/.last-push && \
   mc config host add minio https://localhost:9000 root password --insecure && \
-  mc cp --recursive /tmp/object-storage-pull minio/mybucket/subfolder"
+  mc cp --recursive /tmp/README.md minio/mybucket/subfolder"
 
 # Helm apply the object-storage-pull chart
 helm upgrade --install object-storage-pull . \
@@ -36,7 +36,7 @@ helm upgrade --install object-storage-pull . \
   --set container.env.OBJECT_STORAGE_ENDPOINT=minio.minio.svc.cluster.local:9000 \
   --set container.env.OBJECT_STORAGE_BUCKET=mybucket \
   --set container.env.OBJECT_STORAGE_DIR=subfolder \
-  --set container.env.OBJECT_STORAGE_SOURCE="object-storage-pull/"
+  --set container.env.OBJECT_STORAGE_SOURCE="README.md"
 
 # Wait for the object-storage-pull pod to start
 sleep 10
