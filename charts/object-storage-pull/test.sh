@@ -39,7 +39,7 @@ helm upgrade --install object-storage-pull . \
   --set container.env.OBJECT_STORAGE_SOURCE="README.md"
 
 # Wait for the object-storage-pull pod to start
-sleep 10
+sleep 20
 
 # Show logs
 OBJECT_STORAGE_PULL_POD="$(kubectl --namespace=object-storage-pull get pods -l app.kubernetes.io/name=object-storage-pull -o jsonpath="{.items[0].metadata.name}")"
