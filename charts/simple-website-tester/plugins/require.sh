@@ -204,7 +204,13 @@ fi
 
 # Get the basic information of the URL
 echo "### Fetching ${BASE_URL}${URL_PATH} ###"
-RETURNED_CURL=$(curl --connect-timeout 5 --max-time 10 --insecure --silent --write-out "\n---BEGIN WRITE-OUT---\nRETURNED_STATUS_CODE: %{response_code}\nRETURNED_REDIRECT_URL: %{redirect_url}\nRETURNED_SIZE: %{size_download}\nRETURNED_LOAD_TIME: %{time_total}\n" "${BASE_URL}${URL_PATH}" 2>/dev/null)
+# - Instead of exiting on curl error, show error, then exit
+RETURNED_CURL=$(curl --connect-timeout 5 --max-time 10 --insecure --silent --write-out "\n---BEGIN WRITE-OUT---\nRETURNED_STATUS_CODE: %{response_code}\nRETURNED_REDIRECT_URL: %{redirect_url}\nRETURNED_SIZE: %{size_download}\nRETURNED_LOAD_TIME: %{time_total}\n" "${BASE_URL}${URL_PATH}" 2>/dev/null) || true
+# shellcheck disable=SC2181
+if [[ $? -ne 0 ]]; then
+  echo "$RETURNED_CURL"
+  exit_message "Curl failed to fetch the URL."
+fi
 RETURNED_HTML=$(echo "$RETURNED_CURL" | perl -pe 'last if /---BEGIN WRITE-OUT---/')
 RETURNED_WRITE_OUT=$(echo "$RETURNED_CURL" | perl -0777 -pe 's/.*?---BEGIN WRITE-OUT---\n//s')
 RETURNED_STATUS_CODE=$(echo "$RETURNED_WRITE_OUT" | grep "RETURNED_STATUS_CODE" | awk '{print $2}')
