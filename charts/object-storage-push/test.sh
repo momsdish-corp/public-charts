@@ -29,14 +29,14 @@ helm upgrade --install object-storage-push . \
   --set container.env.OBJECT_STORAGE_ENDPOINT=minio.minio.svc.cluster.local:9000 \
   --set container.env.OBJECT_STORAGE_BUCKET=mybucket \
   --set container.env.OBJECT_STORAGE_DIR=subfolder \
-  --set container.env.OBJECT_STORAGE_SOURCE="object-storage-push/"
+  --set container.env.OBJECT_STORAGE_SOURCE="README.md"
 
 # Wait for the object-storage-push pod to be ready
 kubectl --namespace=object-storage-push wait --for=condition=ready pod --selector=app.kubernetes.io/name=object-storage-push --timeout=120s
 
 # Copy the object-storage-push directory to the object-storage-push pod
 OBJECT_STORAGE_PUSH_POD="$(kubectl --namespace=object-storage-push get pods -l app.kubernetes.io/name=object-storage-push -o jsonpath="{.items[0].metadata.name}")"
-kubectl --namespace=object-storage-push cp ../object-storage-push "$OBJECT_STORAGE_PUSH_POD":/files
+kubectl --namespace=object-storage-push cp ../object-storage-push/README.md "$OBJECT_STORAGE_PUSH_POD":/files/README.md
 
 # Mark it as ready
 kubectl --namespace=object-storage-push exec "$OBJECT_STORAGE_PUSH_POD" -- touch /files/.ready
