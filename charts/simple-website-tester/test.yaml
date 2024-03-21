@@ -9,6 +9,7 @@ plugins:
   require:
     # By default, this will expect status code 200
     - path: /
+      timeout: 2
       statusCode: 200
       cssSelector:
         - 'title:text("Example Domain")'
@@ -16,5 +17,5 @@ plugins:
       antiCssSelector:
         - 'title:text("Random name")'
     # Check for a specific status code & title of the page
-    - path: /this-path-should-not-exist
+    - path: /404
       statusCode: 404
