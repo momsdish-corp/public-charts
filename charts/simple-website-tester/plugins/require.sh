@@ -212,7 +212,7 @@ RETURNED_CURL=$(curl --connect-timeout "$TIMEOUT_SECONDS" --max-time "$TIMEOUT_S
 # shellcheck disable=SC2181
 if [[ $? -ne 0 ]]; then
   echo "$RETURNED_CURL"
-  exit_message "Curl failed to fetch the URL."
+  exit_message "Curl failed to fetch the ${BASE_URL}${URL_PATH} in under ${TIMEOUT_SECONDS}s."
 fi
 RETURNED_HTML=$(echo "$RETURNED_CURL" | perl -pe 'last if /---BEGIN WRITE-OUT---/')
 RETURNED_WRITE_OUT=$(echo "$RETURNED_CURL" | perl -0777 -pe 's/.*?---BEGIN WRITE-OUT---\n//s')
