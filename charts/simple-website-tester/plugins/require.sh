@@ -161,6 +161,7 @@ print_usage() {
   echo "Usage: $(dirname "$0")/$(basename "$0") --baseURL=\"$(return_url_encoded https://localhost:8443/)\" --cssSelector=$(return_url_encoded 'title:text(\"My case-sensitive title!\")')"
   echo "--baseURL            (string) (required) URL to fetch, including the protocol and port."
   echo "--path               (string) (optional) Path, relative to the URL."
+  echo "--timeout            (number) (optional) Max time to wait in seconds. You may use decimals. Default is 10 seconds."
   echo "--statusCode         (number) (optional) Expected status code. Defaults to 200."
   echo "--redirectsTo        (string) (optional) Full URL of the expected redirect."
   echo "--cssSelector        (string) (optional) CSS selector to require. Append :text(text) to require a specific text. Allows for multiple selectors."
@@ -171,6 +172,7 @@ print_usage() {
 }
 
 # Set defaults
+TIMEOUT_SECONDS=10
 EXPECTING_STATUS_CODE=200
 WAIT_BEFORE_EXIT=1
 
@@ -178,12 +180,13 @@ WAIT_BEFORE_EXIT=1
 while (( ${#} > 0 )); do
   case "${1}" in
     ( '--baseURL='* ) BASE_URL="$(return_url_decoded "${1#*=}")" ;;
-    ( '--waitBeforeExit='* ) WAIT_BEFORE_EXIT="$(return_number "${1#*=}")" ;;
   	( '--path='* ) URL_PATH="$(return_url_decoded "${1#*=}")" ;;
+    ( '--timeout='* ) TIMEOUT_SECONDS="$(return_number "${1#*=}")" ;;
   	( '--statusCode='* ) EXPECTING_STATUS_CODE="$(return_number "${1#*=}")" ;;
     ( '--redirectsTo='* ) EXPECTING_REDIRECTS_TO="$(return_url_decoded "${1#*=}")" ;;
     ( '--cssSelector='* ) EXPECTING_CSS_SELECTOR+=("$(return_url_decoded "${1#*=}")") ;; # Store in an array
     ( '--antiCssSelector='* ) EXPECTING_ANTI_CSS_SELECTOR+=("$(return_url_decoded "${1#*=}")") ;; # Store in an array
+    ( '--waitBeforeExit='* ) WAIT_BEFORE_EXIT="$(return_number "${1#*=}")" ;;
   	( '--debug' ) DEBUG=1 ;;
     ( * ) print_usage
           exit 1;;
@@ -203,13 +206,13 @@ if [[ -z "$BASE_URL" ]]; then
 fi
 
 # Get the basic information of the URL
-echo "### Fetching ${BASE_URL}${URL_PATH} ###"
+echo "### Fetching ${BASE_URL}${URL_PATH} (${TIMEOUT_SECONDS}s timeout) ###"
 # - Instead of exiting on curl error, show error, then exit
-RETURNED_CURL=$(curl --connect-timeout 5 --max-time 10 --insecure --silent --write-out "\n---BEGIN WRITE-OUT---\nRETURNED_STATUS_CODE: %{response_code}\nRETURNED_REDIRECT_URL: %{redirect_url}\nRETURNED_SIZE: %{size_download}\nRETURNED_LOAD_TIME: %{time_total}\n" "${BASE_URL}${URL_PATH}" 2>/dev/null) || true
+RETURNED_CURL=$(curl --connect-timeout "$TIMEOUT_SECONDS" --max-time "$TIMEOUT_SECONDS" --insecure --silent --write-out "\n---BEGIN WRITE-OUT---\nRETURNED_STATUS_CODE: %{response_code}\nRETURNED_REDIRECT_URL: %{redirect_url}\nRETURNED_SIZE: %{size_download}\nRETURNED_LOAD_TIME: %{time_total}\n" "${BASE_URL}${URL_PATH}" 2>/dev/null) || true
 # shellcheck disable=SC2181
 if [[ $? -ne 0 ]]; then
   echo "$RETURNED_CURL"
-  exit_message "Curl failed to fetch the URL."
+  exit_message "Curl failed to fetch the ${BASE_URL}${URL_PATH}."
 fi
 RETURNED_HTML=$(echo "$RETURNED_CURL" | perl -pe 'last if /---BEGIN WRITE-OUT---/')
 RETURNED_WRITE_OUT=$(echo "$RETURNED_CURL" | perl -0777 -pe 's/.*?---BEGIN WRITE-OUT---\n//s')
@@ -224,8 +227,7 @@ echo "> Size: $RETURNED_SIZE"
 echo "> Load time: $RETURNED_LOAD_TIME"
 echo "> Page title: $RETURNED_PAGE_TITLE"
 
-# Test
-# - Check status code
+# Check status code
 if [[ -n "$EXPECTING_STATUS_CODE" ]]; then
 	echo '-'
 	require_value_match --name="status code" --value="$RETURNED_STATUS_CODE" --match="$EXPECTING_STATUS_CODE"
