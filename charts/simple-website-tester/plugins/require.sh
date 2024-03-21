@@ -206,13 +206,13 @@ if [[ -z "$BASE_URL" ]]; then
 fi
 
 # Get the basic information of the URL
-echo "### Fetching ${BASE_URL}${URL_PATH} ###"
+echo "### Fetching ${BASE_URL}${URL_PATH} (${TIMEOUT_SECONDS}s timeout) ###"
 # - Instead of exiting on curl error, show error, then exit
 RETURNED_CURL=$(curl --connect-timeout "$TIMEOUT_SECONDS" --max-time "$TIMEOUT_SECONDS" --insecure --silent --write-out "\n---BEGIN WRITE-OUT---\nRETURNED_STATUS_CODE: %{response_code}\nRETURNED_REDIRECT_URL: %{redirect_url}\nRETURNED_SIZE: %{size_download}\nRETURNED_LOAD_TIME: %{time_total}\n" "${BASE_URL}${URL_PATH}" 2>/dev/null) || true
 # shellcheck disable=SC2181
 if [[ $? -ne 0 ]]; then
   echo "$RETURNED_CURL"
-  exit_message "Curl failed to fetch the ${BASE_URL}${URL_PATH} in under ${TIMEOUT_SECONDS}s."
+  exit_message "Curl failed to fetch the ${BASE_URL}${URL_PATH}."
 fi
 RETURNED_HTML=$(echo "$RETURNED_CURL" | perl -pe 'last if /---BEGIN WRITE-OUT---/')
 RETURNED_WRITE_OUT=$(echo "$RETURNED_CURL" | perl -0777 -pe 's/.*?---BEGIN WRITE-OUT---\n//s')
