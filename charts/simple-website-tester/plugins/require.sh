@@ -161,7 +161,7 @@ print_usage() {
   echo "Usage: $(dirname "$0")/$(basename "$0") --baseURL=\"$(return_url_encoded https://localhost:8443/)\" --cssSelector=$(return_url_encoded 'title:text(\"My case-sensitive title!\")')"
   echo "--baseURL            (string) (required) URL to fetch, including the protocol and port."
   echo "--path               (string) (optional) Path, relative to the URL."
-  echo "--timeout            (number) (optional) Max time to wait in seconds. You may use decimals. Default is 10 seconds."
+  echo "--timeout            (float)  (optional) Max time to wait in seconds. You may use decimals. Default is 10 seconds."
   echo "--statusCode         (number) (optional) Expected status code. Defaults to 200."
   echo "--redirectsTo        (string) (optional) Full URL of the expected redirect."
   echo "--cssSelector        (string) (optional) CSS selector to require. Append :text(text) to require a specific text. Allows for multiple selectors."
