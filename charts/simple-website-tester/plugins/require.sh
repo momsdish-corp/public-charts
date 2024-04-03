@@ -55,8 +55,6 @@ exit_message() {
 }
 
 require_value_match() {
-	is_true "$DEBUG" && echo "Executing require_value_match()" || true
-
 	local 'name' 'value' 'match'
 
 	# Arguments handling
@@ -69,6 +67,8 @@ require_value_match() {
 		shift
 	done
 
+	is_true "$DEBUG" && echo "Executing require_value_match() --name=\"$name\" --value=\"$value\" --match=\"$match\"" || true
+
 	echo "Requiring $name to match: $match"
 
 	if [[ "$value" == "$match" ]]; then
@@ -79,8 +79,6 @@ require_value_match() {
 }
 
 require_value() {
-	is_true "$DEBUG" && echo "Executing require_value()" || true
-
 	local 'name' 'value'
 
 	# Arguments handling
@@ -92,6 +90,8 @@ require_value() {
 		shift
 	done
 
+	is_true "$DEBUG" && echo "Executing require_value() --name=\"$name\" --value=\"$value\"" || true
+
 	echo "Requiring $name to exist"
 
 	if [[ -n "$value" ]]; then
@@ -102,8 +102,6 @@ require_value() {
 }
 
 require_value_no_match() {
-  is_true "$DEBUG" && echo "Executing require_value_no_match()" || true
-
   local 'name' 'value' 'match'
 
   # Arguments handling
@@ -116,6 +114,8 @@ require_value_no_match() {
     shift
   done
 
+  is_true "$DEBUG" && echo "Executing require_value_no_match() --name=\"$name\" --value=\"$value\" --match=\"$match\"" || true
+
   echo "Requiring $name not to match: $match"
 
   if [[ "$value" != "$match" ]]; then
@@ -126,8 +126,6 @@ require_value_no_match() {
 }
 
 require_no_value() {
-  is_true "$DEBUG" && echo "Executing require_no_value()" || true
-
   local 'name' 'value'
 
   # Arguments handling
@@ -138,6 +136,8 @@ require_no_value() {
     esac
     shift
   done
+
+  is_true "$DEBUG" && echo "Executing require_no_value() --name=\"$name\" --value=\"$value\"" || true
 
   echo "Requiring $name not to exist"
 
