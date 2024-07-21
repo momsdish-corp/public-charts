@@ -21,7 +21,7 @@ sleep 10
 # Upload some directory to the bucket before testing
 MINIO_POD="$(kubectl --namespace=minio get pods -l app.kubernetes.io/name=minio -o jsonpath="{.items[0].metadata.name}")"
 kubectl --namespace minio cp ../s3-pull/README.md "$MINIO_POD":/tmp
-kubectl --namespace=minio exec "$MINIO_POD" -- bash -c "echo 's3-pull' > /tmp/.last-push && \
+kubectl --namespace=minio exec "$MINIO_POD" -- bash -c "echo 'README.md' > /tmp/.latest && \
   mc config host add minio https://localhost:9000 root password --insecure && \
   mc cp --recursive /tmp/README.md minio/mybucket/subfolder"
 
@@ -29,7 +29,6 @@ kubectl --namespace=minio exec "$MINIO_POD" -- bash -c "echo 's3-pull' > /tmp/.l
 helm upgrade --install s3-pull . \
   --namespace=s3-pull \
   --create-namespace \
-  --set waitSeconds=120 \
   --set noVerifySSL=true \
   --set container.env.S3_ACCESS_KEY=root \
   --set container.env.S3_SECRET_KEY=password \
@@ -38,5 +37,7 @@ helm upgrade --install s3-pull . \
   --set container.env.S3_PATH=subfolder/README.md
 
 # Show logs
-S3_PULL_POD="$(kubectl --namespace=s3-pull get pods -l app.kubernetes.io/name=s3-pull -o jsonpath="{.items[0].metadata.name}")"
-kubectl --namespace=s3-pull logs "$S3_PULL_POD" --follow
+S3_PULL_POD="$(kubectl --namespace=s3-pull get pods -l job-name=s3-pull-job -o jsonpath="{.items[0].metadata.name}")"
+# Require that /s3-data/README.md and /s3-data/.pull files exist
+kubectl --namespace=s3-pull exec "$S3_PULL_POD" -- sh -c 'if [ ! -f /s3-data/README.md ] || [ ! -f /s3-data/.pull ]; then exit 1; else rm /s3-data/.pull; fi'
+kubectl --namespace=s3-pull logs "$S3_PULL_POD" --container=busybox --follow

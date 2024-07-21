@@ -30,14 +30,14 @@ helm upgrade --install s3-push . \
   --set container.env.S3_PATH=subfolder/
 
 # Wait for the s3-push pod to be ready
-kubectl --namespace=s3-push wait --for=condition=ready pod --selector=app.kubernetes.io/name=s3-push --timeout=120s
+kubectl --namespace=s3-push wait --for=condition=ready pod --selector=job-name=s3-push-job --timeout=120s
 
 # Copy the s3-push directory to the s3-push pod
-S3_PUSH_POD="$(kubectl --namespace=s3-push get pods -l app.kubernetes.io/name=s3-push -o jsonpath="{.items[0].metadata.name}")"
+S3_PUSH_POD="$(kubectl --namespace=s3-push get pods -l job-name=s3-push-job -o jsonpath="{.items[0].metadata.name}")"
 kubectl --namespace=s3-push cp ../s3-push/README.md "$S3_PUSH_POD":/s3-data/README.md
 
 # Specify what to upload
-kubectl --namespace=s3-push exec "$S3_PUSH_POD" -- echo "README.md" > /s3-data/.pull
+kubectl --namespace=s3-push exec "$S3_PUSH_POD" -- sh -c 'echo "README.md" > /s3-data/.push'
 
 # Show logs
 kubectl --namespace=s3-push logs "$S3_PUSH_POD" --follow
