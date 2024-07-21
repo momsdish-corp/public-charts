@@ -258,6 +258,16 @@ entries:
   s3-pull:
   - apiVersion: v2
     appVersion: 2.0.0
+    created: "2024-07-21T08:14:16.91815057Z"
+    description: A Helm chart for Kubernetes
+    digest: 8f20f6c4853d761428904ee973145f5cdd2858e9d9ecc9a48cdff88a2eaeb658
+    name: s3-pull
+    type: application
+    urls:
+    - https://github.com/momsdish-corp/public-charts/releases/download/s3-pull-0.0.2/s3-pull-0.0.2.tgz
+    version: 0.0.2
+  - apiVersion: v2
+    appVersion: 2.0.0
     created: "2024-07-21T07:17:56.546163026Z"
     description: A Helm chart for Kubernetes
     digest: 6af6bb3c325e5f5b6f661391564483e76054d9093c8134c0eed9086352330eec
@@ -267,6 +277,16 @@ entries:
     - https://github.com/momsdish-corp/public-charts/releases/download/s3-pull-0.0.1/s3-pull-0.0.1.tgz
     version: 0.0.1
   s3-push:
+  - apiVersion: v2
+    appVersion: 2.0.0
+    created: "2024-07-21T08:14:17.019901343Z"
+    description: A Helm chart for Kubernetes
+    digest: bdf83785671a6827a96bd1ef43bbf002726d6fbb69be8ee849146bf6d12fab0c
+    name: s3-push
+    type: application
+    urls:
+    - https://github.com/momsdish-corp/public-charts/releases/download/s3-push-0.0.2/s3-push-0.0.2.tgz
+    version: 0.0.2
   - apiVersion: v2
     appVersion: 2.0.0
     created: "2024-07-21T07:17:56.742025869Z"
@@ -458,4 +478,4 @@ entries:
     urls:
     - https://github.com/momsdish-corp/public-charts/releases/download/simple-website-tester-0.0.1/simple-website-tester-0.0.1.tgz
     version: 0.0.1
-generated: "2024-07-21T07:17:56.742146995Z"
+generated: "2024-07-21T08:14:17.020010557Z"
