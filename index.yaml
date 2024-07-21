@@ -255,6 +255,28 @@ entries:
     urls:
     - https://github.com/momsdish-corp/public-charts/releases/download/object-storage-push-0.0.2/object-storage-push-0.0.2.tgz
     version: 0.0.2
+  s3-pull:
+  - apiVersion: v2
+    appVersion: 2.0.0
+    created: "2024-07-21T07:17:56.546163026Z"
+    description: A Helm chart for Kubernetes
+    digest: 6af6bb3c325e5f5b6f661391564483e76054d9093c8134c0eed9086352330eec
+    name: s3-pull
+    type: application
+    urls:
+    - https://github.com/momsdish-corp/public-charts/releases/download/s3-pull-0.0.1/s3-pull-0.0.1.tgz
+    version: 0.0.1
+  s3-push:
+  - apiVersion: v2
+    appVersion: 2.0.0
+    created: "2024-07-21T07:17:56.742025869Z"
+    description: A Helm chart for Kubernetes
+    digest: 77ecd11e8ccd4b5d43ae3a94e0345796571ba9633766e496daaa3a17e6d29349
+    name: s3-push
+    type: application
+    urls:
+    - https://github.com/momsdish-corp/public-charts/releases/download/s3-push-0.0.1/s3-push-0.0.1.tgz
+    version: 0.0.1
   simple-website-tester:
   - apiVersion: v2
     appVersion: 0.4.0
@@ -436,4 +458,4 @@ entries:
     urls:
     - https://github.com/momsdish-corp/public-charts/releases/download/simple-website-tester-0.0.1/simple-website-tester-0.0.1.tgz
     version: 0.0.1
-generated: "2024-04-03T23:45:40.356684915Z"
+generated: "2024-07-21T07:17:56.742146995Z"
