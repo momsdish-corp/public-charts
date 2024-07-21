@@ -83,7 +83,7 @@ spec:
                   exit 1
                 fi
                 # Make sure the file is not empty
-                S3_PATH="$(cat /s3-data/.$MARKER)"
+                S3_PATH="${S3_PATH%.*}$(cat /s3-data/.$MARKER)"
                 if [[ -z "$S3_PATH" ]]; then
                   echo "Error! The .$MARKER file is empty."
                   exit 1
@@ -91,6 +91,8 @@ spec:
                 # Clean up the marker file
                 rm -f "/s3-data/.$MARKER"
               fi
+
+              echo "Preparing to download $S3_PATH..."
 
               # Determine if it's a file or directory
               if [[ "$S3_PATH" =~ /$ ]]; then
