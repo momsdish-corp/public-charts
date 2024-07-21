@@ -129,19 +129,23 @@ spec:
               S3_PATH="${S3_PATH#/}"
               S3_PATH="${S3_PATH%/}"
 
-              # Create .previous file if previous backup exists
-
-              if aws s3 ls "s3://$S3_BUCKET/$S3_PATH/.latest" &>/dev/null; then
-                aws s3 cp "s3://$S3_BUCKET/$S3_PATH/.latest" "/s3-data/.latest"${FLAG_NO_VERIFY_SSL}
-                echo "Creating .previous file..."
-                mv "/s3-data/.latest" "/s3-data/.previous"
-              else
-                echo "No previous backup found. Skipping .previous file creation."
-              fi
-
               # Create .latest file
-              echo "Creating .latest file..."
+              echo "Updating .latest file..."
               echo "${S3_SUBDIRECTORY}${S3_SOURCE}" > "/s3-data/.latest"
+
+              # Create .previous file if previous backup exists
+              if aws s3 ls "s3://$S3_BUCKET/$S3_PATH/.latest" &>/dev/null; then
+                aws s3 cp "s3://$S3_BUCKET/$S3_PATH/.latest" "/s3-data/.previous"${FLAG_NO_VERIFY_SSL}
+                # If .previous is identical to .latest, remove it
+                if [ "$(cat /s3-data/.previous)" == "$(cat /s3-data/.latest)" ]; then
+                  rm -f "/s3-data/.previous"
+                  echo "It looks like you are repeating the same push. Skipping the update of .previous file."
+                else
+                  echo "Creating .previous file..."
+                fi
+              else
+                echo "No previous push found. Skipping the update of .previous file."
+              fi
 
               # Add the --recursive flag
               if [[ "$IS_DIR" == "true" ]]; then
