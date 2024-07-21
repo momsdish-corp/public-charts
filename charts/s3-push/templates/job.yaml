@@ -1,0 +1,165 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ .Release.Name }}-job"
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name | quote }}
+    app.kubernetes.io/instance: s3-push
+  annotations:
+    # Trigger restart on file changes
+    checksum.templates.env-secret.yaml: {{ include (print $.Template.BasePath "/env-secret.yaml") . | sha256sum }}
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 10
+  template:
+    spec:
+      activeDeadlineSeconds: {{ .Values.activeDeadlineSeconds }}
+      containers:
+        - name: aws-cli
+          image: "bitnami/aws-cli:2"
+          envFrom:
+            - secretRef:
+                name: {{ .Release.Name }}-env-secret
+          env:
+            - name: S3_SUBDIRECTORY
+              value: {{ .Values.subdirectory | quote }}
+            - name: NO_VERIFY_SSL
+              value: {{ .Values.noVerifySSL | quote }}
+          volumeMounts:
+            - name: {{ .Release.Name }}-pvc
+              mountPath: /s3-data
+          command:
+            - bash
+            - '-c'
+            - |
+              set -e
+
+              # Functions
+              check_key() {
+                KEY_VALUE="$1"
+                KEY_NAME="$2"
+                if [ ! "$KEY_VALUE" ]; then
+                  echo "Error! Secret key \"$KEY_NAME\" is not set."
+                  exit 1
+                fi
+              }
+
+              # Require variables
+              check_key "$S3_ACCESS_KEY" "S3_ACCESS_KEY"
+              check_key "$S3_SECRET_KEY" "S3_SECRET_KEY"
+              check_key "$S3_ENDPOINT" "S3_ENDPOINT"
+              check_key "$S3_BUCKET" "S3_BUCKET"
+              check_key "$S3_PATH" "S3_PATH"
+
+              # Clear out any previously downloads
+              rm -rf "/s3-data/*"
+
+              # Wait for the /s3-data/.push file to be created.
+              echo "Waiting for /s3-data/.push before proceeding..."
+              while [ ! -f "/s3-data/.push" ]; do
+                sleep 1
+              done
+
+              # Remove any http:// or https://
+              S3_ENDPOINT="${S3_ENDPOINT#http://}"
+              S3_ENDPOINT="${S3_ENDPOINT#https://}"
+
+              # Set the AWS CLI environment variables
+              export AWS_ACCESS_KEY_ID="$S3_ACCESS_KEY"
+              export AWS_SECRET_ACCESS_KEY="$S3_SECRET_KEY"
+              export AWS_ENDPOINT_URL="https://${S3_ENDPOINT}"
+              export AWS_REGION="$S3_REGION"
+              # GitHub Actions fix - Ref: https://github.com/aws/aws-cli/issues/5623#issuecomment-801240811
+              export AWS_EC2_METADATA_DISABLED=true
+
+              # Require S3_PATH to end with a trailing slash
+              if [[ "$S3_PATH" != */ ]]; then
+                  echo "Error! S3_PATH must end with a trailing slash /."
+                  exit 1
+              fi
+
+              # Subdirectory
+              if [ $S3_SUBDIRECTORY == "YYYY/MM" ]; then
+                S3_SUBDIRECTORY="$(date +%Y)/$(date +%m)/"
+              fi
+
+              # Add the --no-verify-ssl flag
+              if [ "$NO_VERIFY_SSL" == "true" ]; then
+                FLAG_NO_VERIFY_SSL=" --no-verify-ssl"
+              fi
+
+              # Require .push file
+              if [ ! -f "/s3-data/.push" ]; then
+                  echo "Error! /s3-data/.push file is required."
+                  exit 1
+              elif [ ! -s "/s3-data/.push" ]; then
+                  echo "Error! /s3-data/.push file is empty."
+                  exit 1
+              fi
+
+              # Get the source from the .push file
+              S3_SOURCE="$(cat /s3-data/.push)"
+              echo "Preparing to upload $S3_SOURCE..."
+
+              # Determine if the source is a file or directory
+              if [[ "$S3_SOURCE" =~ /$ ]]; then
+                echo "Assuming this is a directory..."
+                IS_DIR="true"
+              else
+                echo "Assuming this is a file..."
+                IS_DIR="false"
+              fi
+
+              # Make sure the source exists
+              if [ "$IS_DIR" == "true" ] && [ ! -d "/s3-data/$S3_SOURCE" ]; then
+                echo "Error! Directory /s3-data/$S3_SOURCE does not exist."
+                [ -f "/s3-data/$S3_SOURCE" ] && echo "It seems like $S3_SOURCE is a file. Please remove the trailing slash / from the .push file."
+                exit 1
+              fi
+              if [ "$IS_DIR" == "false" ] && [ ! -f "/s3-data/$S3_SOURCE" ]; then
+                echo "Error! File /s3-data/$S3_SOURCE does not exist."
+                [ -d "/s3-data/$S3_SOURCE" ] && echo "It seems like $S3_SOURCE is a directory. Please add the trailing slash / to the .push file."
+                exit 1
+              fi
+              ls -lah "/s3-data/$S3_SOURCE"
+
+              # Remove any leading or trailing slashes
+              S3_PATH="${S3_PATH#/}"
+              S3_PATH="${S3_PATH%/}"
+
+              # Create .previous file if previous backup exists
+
+              if aws s3 ls "s3://$S3_BUCKET/$S3_PATH/.latest" &>/dev/null; then
+                aws s3 cp "s3://$S3_BUCKET/$S3_PATH/.latest" "/s3-data/.latest"${FLAG_NO_VERIFY_SSL}
+                echo "Creating .previous file..."
+                mv "/s3-data/.latest" "/s3-data/.previous"
+              else
+                echo "No previous backup found. Skipping .previous file creation."
+              fi
+
+              # Create .latest file
+              echo "Creating .latest file..."
+              echo "${S3_SUBDIRECTORY}${S3_SOURCE}" > "/s3-data/.latest"
+
+              # Add the --recursive flag
+              if [[ "$IS_DIR" == "true" ]]; then
+                RECURSIVE_FLAG=" --recursive"
+              fi
+
+              # Upload
+              echo "Uploading to s3://${S3_BUCKET}/${S3_PATH}/${S3_SUBDIRECTORY}${S3_SOURCE}..."
+              aws s3 cp "/s3-data/${S3_SOURCE}" "s3://${S3_BUCKET}/${S3_PATH}/${S3_SUBDIRECTORY}${S3_SOURCE}"${FLAG_NO_VERIFY_SSL}${FLAG_RECURSIVE}
+              if [ -f /s3-data/.previous ]; then
+                echo "Uploading .previous file..."
+                aws s3 cp "/s3-data/.previous" "s3://${S3_BUCKET}/${S3_PATH}/.previous"${FLAG_NO_VERIFY_SSL}${FLAG_RECURSIVE}
+              fi
+              echo "Uploading .latest file..."
+              aws s3 cp "/s3-data/.latest" "s3://${S3_BUCKET}/${S3_PATH}/.latest"${FLAG_NO_VERIFY_SSL}${FLAG_RECURSIVE}
+
+              echo "Upload complete."
+      restartPolicy: Never
+      volumes:
+        - name: {{ .Release.Name }}-pvc
+          emptyDir: { }

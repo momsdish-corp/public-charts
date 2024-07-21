@@ -1,0 +1,152 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ .Release.Name }}-job"
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name | quote }}
+    app.kubernetes.io/instance: s3-pull
+  annotations:
+    # Trigger restart on file changes
+    checksum.templates.env-secret.yaml: {{ include (print $.Template.BasePath "/env-secret.yaml") . | sha256sum }}
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 10
+  template:
+    spec:
+      activeDeadlineSeconds: {{ .Values.activeDeadlineSeconds }}
+      initContainers:
+        - name: aws-cli
+          image: "bitnami/aws-cli:2"
+          envFrom:
+            - secretRef:
+                name: {{ .Release.Name }}-env-secret
+          env:
+            - name: NO_VERIFY_SSL
+              value: {{ .Values.noVerifySSL | quote }}
+          volumeMounts:
+            - name: {{ .Release.Name }}-pvc
+              mountPath: /s3-data
+          command:
+            - bash
+            - '-c'
+            - |
+              set -e
+
+              # Functions
+              check_key() {
+                KEY_VALUE="$1"
+                KEY_NAME="$2"
+                if [ ! "$KEY_VALUE" ]; then
+                  echo "Error! Secret key \"$KEY_NAME\" is not set."
+                  exit 1
+                fi
+              }
+
+              # Require variables
+              check_key "$S3_ACCESS_KEY" "S3_ACCESS_KEY"
+              check_key "$S3_SECRET_KEY" "S3_SECRET_KEY"
+              check_key "$S3_ENDPOINT" "S3_ENDPOINT"
+              check_key "$S3_BUCKET" "S3_BUCKET"
+              check_key "$S3_PATH" "S3_PATH"
+
+              # Clear out any previously downloads
+              rm -rf "/s3-data/*"
+
+              # Remove any http:// or https://
+              S3_ENDPOINT="${S3_ENDPOINT#http://}"
+              S3_ENDPOINT="${S3_ENDPOINT#https://}"
+
+              # Set the AWS CLI environment variables
+              export AWS_ACCESS_KEY_ID="$S3_ACCESS_KEY"
+              export AWS_SECRET_ACCESS_KEY="$S3_SECRET_KEY"
+              export AWS_ENDPOINT_URL="https://${S3_ENDPOINT}"
+              export AWS_REGION="$S3_REGION"
+              # GitHub Actions fix - Ref: https://github.com/aws/aws-cli/issues/5623#issuecomment-801240811
+              export AWS_EC2_METADATA_DISABLED=true
+
+              # Add the --no-verify-ssl flag
+              if [ "$NO_VERIFY_SSL" == "true" ]; then
+                FLAG_NO_VERIFY_SSL=" --no-verify-ssl"
+              fi
+
+              # Process .latest & .previous paths
+              # If $S3_PATH ends with .latest or .previous, get the actual filename
+              if [[ "$(basename $S3_PATH)" == ".previous" ]] || [[ "$(basename $S3_PATH)" == ".latest" ]]; then
+                MARKER="${S3_PATH##*.}"
+                echo "Fetching $S3_PATH..."
+                aws s3 cp "s3://$S3_BUCKET/$S3_PATH" "/s3-data/.$MARKER"${FLAG_NO_VERIFY_SSL}
+                # Make sure the file exists
+                if [ ! -f "/s3-data/.$MARKER" ]; then
+                  echo "Error! Unable to get the .$MARKER file."
+                  exit 1
+                fi
+                # Make sure the file is not empty
+                S3_PATH="$(cat /s3-data/.$MARKER)"
+                if [[ -z "$S3_PATH" ]]; then
+                  echo "Error! The .$MARKER file is empty."
+                  exit 1
+                fi
+                # Clean up the marker file
+                rm -f "/s3-data/.$MARKER"
+              fi
+
+              # Determine if it's a file or directory
+              if [[ "$S3_PATH" =~ /$ ]]; then
+                echo "Assuming this is a directory..."
+                IS_DIR="true"
+              else
+                echo "Assuming this is a file..."
+                IS_DIR="false"
+              fi
+
+              # Remove any leading or trailing slashes
+              S3_PATH="${S3_PATH#/}"
+              S3_PATH="${S3_PATH%/}"
+
+              # Add the --recursive flag
+              if [[ "$IS_DIR" == "true" ]]; then
+                FLAG_RECURSIVE=" --recursive"
+              fi
+
+              # Get the filename from the path
+              PATH_BASENAME=$(basename "$S3_PATH")
+
+              # Download
+              echo "Downloading s3://$S3_BUCKET/$S3_PATH to /s3-data/${PATH_BASENAME}..."
+              aws s3 cp "s3://$S3_BUCKET/$S3_PATH" "/s3-data/${PATH_BASENAME}"${FLAG_NO_VERIFY_SSL}${FLAG_RECURSIVE}
+
+              # Save the downloaded file or directory name
+              echo "${PATH_BASENAME}" > /s3-data/.pull
+      containers:
+        # To allow copying of the files from the container to the local machine
+        - name: busybox
+          image: busybox:1
+          volumeMounts:
+            - name: {{ .Release.Name }}-pvc
+              mountPath: /s3-data
+          command:
+            - sh
+            - '-c'
+            - |
+              set -e
+
+              # Confirm /s3-data/.pull exists
+              if [ ! -f "/s3-data/.pull" ]; then
+                echo "Error! The /s3-data/.pull file is missing."
+                exit 1
+              fi
+
+              echo "The file has been downloaded to /s3-data/$(cat /s3-data/.pull)"
+              echo "The name of the download can be found in /s3-data/.pull"
+              ls -lah /s3-data
+
+              # Wait until /s3-data/.pull deleted
+              while [ -f "/s3-data/.pull" ]; do
+                sleep 1
+              done
+      restartPolicy: Never
+      volumes:
+        - name: {{ .Release.Name }}-pvc
+          emptyDir: {}
