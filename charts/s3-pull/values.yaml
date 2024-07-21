@@ -6,7 +6,6 @@ container:
   #    S3_REGION: ""
   #    S3_BUCKET: ""
   #    S3_PATH: "" # Can be a file, directory, ".latest" or ".previous". If ends with "/", it will be treated as a directory. If .latest/.previous, it will copy the name from the file.
-  #    S3_NO_VERIFY_SSL: ""
   env: {}
   envBase64: {}
 # Maximum time to wait for the job to complete

@@ -6,7 +6,6 @@ container:
   #    S3_REGION: ""
   #    S3_BUCKET: ""
   #    S3_PATH: "" # Must end with /
-  #    S3_DISABLE_SSL: ""
   env: {}
   envBase64: {}
 # Upload subdirectory. Current options: "" or "YYYY/MM"
