@@ -39,6 +39,8 @@ helm upgrade --install s3-pull . \
 # Show logs
 S3_PULL_POD="$(kubectl --namespace=s3-pull get pods -l job-name=s3-pull-job -o jsonpath="{.items[0].metadata.name}")"
 sleep 10
+kubectl --namespace=s3-pull logs "$S3_PULL_POD" --container=aws-cli --follow
+sleep 10
 # Require that /s3-data/README.md and /s3-data/.pull files exist
 kubectl --namespace=s3-pull exec "$S3_PULL_POD" --container=busybox -- sh -c 'if [ ! -f /s3-data/README.md ] || [ ! -f /s3-data/.pull ]; then exit 1; else rm /s3-data/.pull; fi'
 kubectl --namespace=s3-pull logs "$S3_PULL_POD" --container=busybox --follow
