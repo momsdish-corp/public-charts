@@ -258,6 +258,16 @@ entries:
   s3-pull:
   - apiVersion: v2
     appVersion: 2.0.0
+    created: "2024-07-21T09:10:09.815236779Z"
+    description: A Helm chart for Kubernetes
+    digest: a60a38940bf5c4058597d5cd8a59e970b3b1905f13381faa7e3a4cbafbf0ba73
+    name: s3-pull
+    type: application
+    urls:
+    - https://github.com/momsdish-corp/public-charts/releases/download/s3-pull-0.0.3/s3-pull-0.0.3.tgz
+    version: 0.0.3
+  - apiVersion: v2
+    appVersion: 2.0.0
     created: "2024-07-21T08:14:16.91815057Z"
     description: A Helm chart for Kubernetes
     digest: 8f20f6c4853d761428904ee973145f5cdd2858e9d9ecc9a48cdff88a2eaeb658
@@ -478,4 +488,4 @@ entries:
     urls:
     - https://github.com/momsdish-corp/public-charts/releases/download/simple-website-tester-0.0.1/simple-website-tester-0.0.1.tgz
     version: 0.0.1
-generated: "2024-07-21T08:14:17.020010557Z"
+generated: "2024-07-21T09:10:09.815358515Z"
