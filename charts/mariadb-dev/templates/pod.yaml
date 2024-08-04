@@ -16,6 +16,7 @@ metadata:
     {{- end }}
     # Trigger restart on file changes
     checksum.templates.env-secret.yaml: {{ include (print $.Template.BasePath "/env-secret.yaml") . | sha256sum }}
+    checksum.templates.cm.yaml: {{ include (print $.Template.BasePath "/cm.yaml") . | sha256sum }}
     # Force recreate the pod on upgrade
     checksum.force.recreate: "{{- if .Values.forceRecreate }}{{ randAlphaNum 10 }}{{- end }}"
 spec:
@@ -99,6 +100,9 @@ spec:
           {{- if .Values.persistence.subPath }}
           subPath: {{ .Values.persistence.subPath }}
           {{- end }}
+        - name: {{ .Release.Name }}-configuration
+          mountPath: "/opt/bitnami/mariadb/conf/my.cnf"
+          subPath: my.cnf
   volumes:
     - name: {{ .Release.Name }}-pv
       {{- if and .Values.persistence.enabled .Values.persistence.local.enabled }}
@@ -111,3 +115,9 @@ spec:
       {{- else }}
       emptyDir: {}
       {{- end }}
+    - name: {{ .Release.Name }}-configuration
+      configMap:
+        name: {{ .Release.Name }}-cm
+        items:
+          - key: my.cnf
+            path: my.cnf

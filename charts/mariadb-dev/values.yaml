@@ -47,3 +47,39 @@ persistence:
   storageClass: "local-path"
   accessMode: "ReadWriteOnce"
   size: 5Gi
+# Ref: https://github.com/bitnami/charts/blob/main/bitnami/mariadb/values.yaml
+configuration: |-
+  [mysqld]
+  skip-name-resolve
+  explicit_defaults_for_timestamp
+  basedir=/opt/bitnami/mariadb
+  datadir=/bitnami/mariadb/data
+  plugin_dir=/opt/bitnami/mariadb/plugin
+  port=3306
+  socket=/opt/bitnami/mariadb/tmp/mysql.sock
+  tmpdir=/opt/bitnami/mariadb/tmp
+  max_allowed_packet=16M
+  bind-address=*
+  pid-file=/opt/bitnami/mariadb/tmp/mysqld.pid
+  log-error=/opt/bitnami/mariadb/logs/mysqld.log
+  character-set-server=UTF8
+  collation-server=utf8_general_ci
+  slow_query_log=0
+  long_query_time=10.0
+  
+  # Optimize for Github Actions
+  innodb_buffer_pool_size=1G
+  innodb_log_file_size=256M
+  innodb_flush_log_at_trx_commit=2
+  innodb_file_per_table=1
+  
+  [client]
+  port=3306
+  socket=/opt/bitnami/mariadb/tmp/mysql.sock
+  default-character-set=UTF8
+  plugin_dir=/opt/bitnami/mariadb/plugin
+  
+  [manager]
+  port=3306
+  socket=/opt/bitnami/mariadb/tmp/mysql.sock
+  pid-file=/opt/bitnami/mariadb/tmp/mysqld.pid
