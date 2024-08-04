@@ -46,14 +46,18 @@ spec:
         - secretRef:
             name: {{ .Release.Name }}-env-secret
       resources:
+        {{- if .Values.container.resources.requests }}
         requests:
-          cpu: {{ .Values.container.resources.requests.cpu }}
-          memory: {{ .Values.container.resources.requests.memory }}
-          ephemeral-storage: {{ .Values.container.resources.requests.ephemeralStorage }}
+          {{- range $key, $value := .Values.container.resources.requests }}
+          {{- printf "%s: %s\n" $key $value | nindent 10 }}
+          {{- end }}
+        {{- end }}
+        {{- if .Values.container.resources.limits }}
         limits:
-          cpu: {{ .Values.container.resources.limits.cpu }}
-          memory: {{ .Values.container.resources.limits.memory }}
-          ephemeral-storage: {{ .Values.container.resources.limits.ephemeralStorage }}
+          {{- range $key, $value := .Values.container.resources.limits }}
+          {{- printf "%s: %s\n" $key $value | nindent 10 }}
+          {{- end }}
+        {{- end }}
       ports:
         - name: https
           containerPort: 3306
