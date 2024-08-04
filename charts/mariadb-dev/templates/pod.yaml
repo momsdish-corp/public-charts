@@ -49,9 +49,11 @@ spec:
         requests:
           cpu: {{ .Values.container.resources.requests.cpu }}
           memory: {{ .Values.container.resources.requests.memory }}
+          ephemeral-storage: {{ .Values.container.resources.requests.ephemeralStorage }}
         limits:
           cpu: {{ .Values.container.resources.limits.cpu }}
           memory: {{ .Values.container.resources.limits.memory }}
+          ephemeral-storage: {{ .Values.container.resources.limits.ephemeralStorage }}
       ports:
         - name: https
           containerPort: 3306
