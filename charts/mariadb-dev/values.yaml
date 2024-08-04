@@ -12,11 +12,11 @@ container:
     requests:
       cpu: 200m
       memory: 256Mi
-      ephemeralStorage: 1Gi
+      ephemeral-storage: 1Gi
     limits:
       cpu: 400m
       memory: 1024Mi
-      ephemeralStorage: 2Gi
+      ephemeral-storage: 2Gi
   startupProbe:
     enabled: true
     initialDelaySeconds: 30
