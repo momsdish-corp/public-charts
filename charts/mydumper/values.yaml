@@ -10,5 +10,14 @@ container:
     MYSQL_DATABASE: ""
     VERBOSE: 2
   envBase64: ""
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+      ephemeralStorage: 1Gi
+    limits:
+      cpu: 400m
+      memory: 1024Mi
+      ephemeralStorage: 2Gi
 # Seconds to wait keep the container running, to allow copying files in/out of container
 waitSeconds: 1800
