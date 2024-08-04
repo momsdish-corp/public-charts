@@ -34,6 +34,16 @@ entries:
   mariadb-dev:
   - apiVersion: v2
     appVersion: 11.4.0
+    created: "2024-08-04T23:30:43.733319328Z"
+    description: A Helm chart for Kubernetes
+    digest: 9c4f9999fc911c7252a53eae4531c749ffe8112db82f455999607aadab110c71
+    name: mariadb-dev
+    type: application
+    urls:
+    - https://github.com/momsdish-corp/public-charts/releases/download/mariadb-dev-0.2.3/mariadb-dev-0.2.3.tgz
+    version: 0.2.3
+  - apiVersion: v2
+    appVersion: 11.4.0
     created: "2024-08-04T22:37:10.232476706Z"
     description: A Helm chart for Kubernetes
     digest: 59e0fe9dbc44ebf3f47981b21b8b04f999abf92561b2b06bad4bfc1ad6636926
@@ -133,6 +143,16 @@ entries:
     - https://github.com/momsdish-corp/public-charts/releases/download/mariadb-dev-0.0.1/mariadb-dev-0.0.1.tgz
     version: 0.0.1
   mydumper:
+  - apiVersion: v2
+    appVersion: 0.15.2
+    created: "2024-08-04T23:30:43.830912562Z"
+    description: A Helm chart for Kubernetes
+    digest: b9d827568cd7a6185fd3568a45081fed76a4196e713649560a74325cc8e8b48b
+    name: mydumper
+    type: application
+    urls:
+    - https://github.com/momsdish-corp/public-charts/releases/download/mydumper-0.2.0/mydumper-0.2.0.tgz
+    version: 0.2.0
   - apiVersion: v2
     appVersion: 0.15.2
     created: "2024-02-22T06:55:08.728930049Z"
@@ -528,4 +548,4 @@ entries:
     urls:
     - https://github.com/momsdish-corp/public-charts/releases/download/simple-website-tester-0.0.1/simple-website-tester-0.0.1.tgz
     version: 0.0.1
-generated: "2024-08-04T22:37:10.232584386Z"
+generated: "2024-08-04T23:30:43.831137111Z"
