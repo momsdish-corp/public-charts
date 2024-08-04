@@ -33,6 +33,16 @@ entries:
     version: 0.0.1
   mariadb-dev:
   - apiVersion: v2
+    appVersion: 11.4.0
+    created: "2024-08-04T04:44:13.926797742Z"
+    description: A Helm chart for Kubernetes
+    digest: 15893b64c95edacd7e6107087f65202db2a146cda76e5b99fb6ec98b2ef0d6ca
+    name: mariadb-dev
+    type: application
+    urls:
+    - https://github.com/momsdish-corp/public-charts/releases/download/mariadb-dev-0.2.0/mariadb-dev-0.2.0.tgz
+    version: 0.2.0
+  - apiVersion: v2
     appVersion: 11.0.4
     created: "2024-07-28T02:48:19.742634915Z"
     description: A Helm chart for Kubernetes
@@ -498,4 +508,4 @@ entries:
     urls:
     - https://github.com/momsdish-corp/public-charts/releases/download/simple-website-tester-0.0.1/simple-website-tester-0.0.1.tgz
     version: 0.0.1
-generated: "2024-07-28T02:48:19.742756672Z"
+generated: "2024-08-04T04:44:13.926886607Z"
