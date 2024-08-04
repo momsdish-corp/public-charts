@@ -19,6 +19,19 @@ spec:
       envFrom:
         - secretRef:
             name: {{ .Release.Name }}-env-secret
+      resources:
+        {{- if .Values.container.resources.requests }}
+        requests:
+          {{- range $key, $value := .Values.container.resources.requests }}
+          {{- printf "%s: %s\n" $key $value | nindent 10 }}
+          {{- end }}
+        {{- end }}
+        {{- if .Values.container.resources.limits }}
+        limits:
+          {{- range $key, $value := .Values.container.resources.limits }}
+          {{- printf "%s: %s\n" $key $value | nindent 10 }}
+          {{- end }}
+        {{- end }}
       args:
         - sleep
         - {{ .Values.waitSeconds | quote }}
