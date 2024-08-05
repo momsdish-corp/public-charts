@@ -15,9 +15,9 @@ container:
       cpu: 200m
       memory: 256Mi
       ephemeral-storage: 1Gi
-    limits:
-      cpu: 400m
-      memory: 1024Mi
-      ephemeral-storage: 2Gi
+#    limits:
+#      cpu: 400m
+#      memory: 1024Mi
+#      ephemeral-storage: 2Gi
 # Seconds to wait keep the container running, to allow copying files in/out of container
 waitSeconds: 1800
