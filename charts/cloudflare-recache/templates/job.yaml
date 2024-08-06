@@ -26,9 +26,9 @@ spec:
               readOnly: true
           command: [ "/usr/local/bin/crawl.sh" ]
           args:
-            - --sitemap={{ .Values.sitemap }}
-            - --wait={{ .Values.wait }}
-            {{- if .Values.purgeCache }}- --purge-cache{{- end }}
+            - "--sitemap={{ .Values.sitemap }}"
+            - "--wait={{ .Values.wait }}"
+            {{ if .Values.purgeCache }}- "--purge-cache"{{- end }}
       restartPolicy: Never
       volumes:
         - name: {{ .Release.Name }}-files-cm
