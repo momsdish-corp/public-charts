@@ -27,7 +27,7 @@ spec:
           command: [ "/usr/local/bin/crawl.sh" ]
           args:
             - "--sitemap={{ .Values.sitemap }}"
-            - "--wait={{ .Values.wait }}"
+            - "--wait-seconds={{ .Values.waitSeconds }}"
             {{ if .Values.purgeCache }}- "--purge-cache"{{- end }}
       restartPolicy: Never
       volumes:

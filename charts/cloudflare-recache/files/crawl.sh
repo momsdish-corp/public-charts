@@ -84,9 +84,9 @@ print_usage() {
   echo "Description:"
   echo "This script crawls URLs from a sitemap, including nested sitemaps."
   echo
-  echo "Usage: $(dirname "$0")/$(basename "$0") --sitemap=\"https://example.com/sitemap.xml\" [--wait=1] [--purge-cache]"
+  echo "Usage: $(dirname "$0")/$(basename "$0") --sitemap=\"https://example.com/sitemap.xml\" [--wait-seconds=1] [--purge-cache]"
   echo "--sitemap            (string) (required) URL of the sitemap to crawl."
-  echo "--wait               (number) (optional) Time to wait between crawls in seconds. Default is 1 second."
+  echo "--wait-seconds       (number) (optional) Time to wait between crawls in seconds. Default is 1 second."
   echo "--purge-cache        (bool)   (optional) Whether to purge Cloudflare cache. Requires CLOUDFLARE_ZONE_ID nad CLOUDFLARE_API_KEY env vars."
   echo "--waitBeforeExit     (number) (optional) Wait time in seconds before exiting the script. Default is 1 second."
   echo "--debug                       (optional) Show debug/verbose output"
@@ -94,7 +94,7 @@ print_usage() {
 }
 
 # Set defaults
-WAIT_TIME=1
+WAIT_SECONDS=1
 WAIT_BEFORE_EXIT=1
 PURGE_CACHE=0
 URLS_TEMP_FILE=$(mktemp)
@@ -104,7 +104,7 @@ CF_CACHE_STATUS_TEMP_FILE=$(mktemp)
 while (( ${#} > 0 )); do
   case "${1}" in
     ( '--sitemap='* ) SITEMAP_URL="${1#*=}" ;;
-    ( '--wait='* ) WAIT_TIME="${1#*=}" ;;
+    ( '--wait-seconds='* ) WAIT_SECONDS="${1#*=}" ;;
     ( '--purge-cache' ) PURGE_CACHE=1 ;;
     ( '--waitBeforeExit='* ) WAIT_BEFORE_EXIT="${1#*=}" ;;
     ( '--debug' ) DEBUG=1 ;;
@@ -166,7 +166,7 @@ else
 fi
 
 # Phase 3: Crawl all collected URLs
-echo "Phase 3: Crawling all collected URLs with a $WAIT_TIME second wait time"
+echo "Phase 3: Crawling all collected URLs with a $WAIT_SECONDS second wait time"
 TOTAL_URLS=$(wc -l < "$URLS_TEMP_FILE" | tr -d ' ')
 CURRENT_URL=0
 
@@ -179,7 +179,7 @@ while IFS= read -r url; do
     CURRENT_URL=$((CURRENT_URL + 1))
     echo "${CURRENT_URL}/${TOTAL_URLS}) Crawling $url"
     crawl_url "$url"
-    sleep "$WAIT_TIME"
+    sleep "$WAIT_SECONDS"
 done < "$URLS_TEMP_FILE"
 
 # Results
