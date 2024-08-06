@@ -33,14 +33,16 @@ exit_message() {
 
 crawl_url() {
     local url="$1"
-    RESPONSE=$(curl -s -w "\n---BEGIN WRITE-OUT---\nHTTP_CODE:%{http_code}\nTIME_TOTAL:%{time_total}\nSIZE_DOWNLOAD:%{size_download}\n" --insecure "$url")
+    RESPONSE=$(curl -s -I -w "\n---BEGIN WRITE-OUT---\nHTTP_CODE:%{http_code}\nTIME_TOTAL:%{time_total}\nSIZE_DOWNLOAD:%{size_download}\n" --insecure "$url")
     WRITE_OUT=$(echo "$RESPONSE" | sed -n '/---BEGIN WRITE-OUT---/,$p' | tail -n +2)
 
     HTTP_CODE=$(echo "$WRITE_OUT" | grep HTTP_CODE | cut -d':' -f2)
     TIME_TOTAL=$(echo "$WRITE_OUT" | grep TIME_TOTAL | cut -d':' -f2)
-    SIZE_DOWNLOAD=$(echo "$WRITE_OUT" | grep SIZE_DOWNLOAD | cut -d':' -f2)
+    CF_CACHE_STATUS=$(echo "$RESPONSE" | grep -i "Cf-Cache-Status:" | cut -d' ' -f2 | tr -d '\r')
 
-    echo "Status: $HTTP_CODE, Time: ${TIME_TOTAL}s, Size: $SIZE_DOWNLOAD bytes"
+    echo "Status: $HTTP_CODE, Cf-Cache-Status: $CF_CACHE_STATUS, Time: ${TIME_TOTAL}s"
+
+    echo "$CF_CACHE_STATUS" >> "$TEMP_URL_FILE_CF_CACHE_STATUS"
 
     if [[ "$HTTP_CODE" != "200" ]]; then
         echo "Warning: Non-200 status code for $url"
@@ -96,6 +98,7 @@ WAIT_TIME=1
 WAIT_BEFORE_EXIT=1
 PURGE_CACHE=0
 TEMP_URL_FILE=$(mktemp)
+TEMP_URL_FILE_CF_CACHE_STATUS=$(mktemp)
 
 # Arguments handling
 while (( ${#} > 0 )); do
@@ -164,7 +167,7 @@ fi
 
 # Phase 3: Crawl all collected URLs
 echo "Phase 3: Crawling all collected URLs with a $WAIT_TIME second wait time"
-TOTAL_URLS=$(wc -l < "$TEMP_URL_FILE")
+TOTAL_URLS=$(wc -l < "$TEMP_URL_FILE" | tr -d ' ')
 CURRENT_URL=0
 
 # Require URLs
@@ -174,13 +177,42 @@ fi
 
 while IFS= read -r url; do
     CURRENT_URL=$((CURRENT_URL + 1))
-    echo "${CURRENT_URL}/${TOTAL_URLS} Crawling $url"
+    echo "${CURRENT_URL}/${TOTAL_URLS}) Crawling $url"
     crawl_url "$url"
     sleep "$WAIT_TIME"
 done < "$TEMP_URL_FILE"
 
+# Results
+echo ""
+echo "Cf-Cache-Status:"
+
+CF_CACHE_STATUS_TOTAL="$(cat "$TEMP_URL_FILE_CF_CACHE_STATUS")"
+echo "$CF_CACHE_STATUS_TOTAL" | sort | uniq -c | sort -rn | while read count status; do
+    echo "$status: $count"
+done
+
+# Calculate HIT and MISS counts
+HIT=$(echo "$CF_CACHE_STATUS_TOTAL" | grep -c "HIT" || true)
+MISS=$(echo "$CF_CACHE_STATUS_TOTAL" | grep -c "MISS" || true)
+
+# Ensure HIT and MISS are numeric
+HIT=${HIT:-0}
+MISS=${MISS:-0}
+
+# Calculate late crawls (Where a user triggered the page before the crawl was able to get to it)
+echo ""
+echo "Late crawls:"
+if [ $((HIT + MISS)) -ne 0 ]; then
+    HIT_PERCENTAGE=$(awk "BEGIN {printf \"%.2f\", 100 / ($HIT + $MISS) * $HIT}")
+    echo "$HIT_PERCENTAGE%"
+else
+    echo "Undefined"
+fi
+
 # Clean up
 rm -f "$TEMP_URL_FILE"
+rm -f "$TEMP_URL_FILE_CF_CACHE_STATUS"
 
 show_timer
+echo ""
 echo "Crawl completed successfully."
