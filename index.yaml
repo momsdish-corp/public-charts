@@ -430,6 +430,16 @@ entries:
   simple-crawler:
   - apiVersion: v2
     appVersion: 0.4.0
+    created: "2024-08-06T02:47:45.07519498Z"
+    description: A Helm chart for Kubernetes
+    digest: e95a73b4c517c0df0b528f32ca417536e567b81efdd4b22da4e8f25563843624
+    name: simple-crawler
+    type: application
+    urls:
+    - https://github.com/momsdish-corp/public-charts/releases/download/simple-crawler-0.1.1/simple-crawler-0.1.1.tgz
+    version: 0.1.1
+  - apiVersion: v2
+    appVersion: 0.4.0
     created: "2024-08-06T02:30:15.569486219Z"
     description: A Helm chart for Kubernetes
     digest: 75702645fc471a5b88042f8e7b57581df1e3efc0b0761e409f9b8696feb2a570
@@ -619,4 +629,4 @@ entries:
     urls:
     - https://github.com/momsdish-corp/public-charts/releases/download/simple-website-tester-0.0.1/simple-website-tester-0.0.1.tgz
     version: 0.0.1
-generated: "2024-08-06T02:30:15.569627833Z"
+generated: "2024-08-06T02:47:45.075338309Z"
