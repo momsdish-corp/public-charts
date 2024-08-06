@@ -1,7 +1,7 @@
 activeDeadlineSeconds: 60
 sitemap: https://example.com/sitemap.xml
 # Seconds to wait between requests
-wait: 1
+waitSeconds: 1
 purgeCache: false
 env: {}
 envBase64: {}
