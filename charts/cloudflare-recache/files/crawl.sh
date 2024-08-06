@@ -123,7 +123,6 @@ if [[ -z "$SITEMAP_URL" ]]; then
 fi
 
 if is_true "$PURGE_CACHE" ; then
-  exit_message "Missing --cf-zone-id flag. Try --help for more information."
   if [[ -z "$CLOUDFLARE_ZONE_ID" ]]; then
     exit_message "CLOUDFLARE_ZONE_ID is not defined. Try --help for more information."
   fi
@@ -132,6 +131,11 @@ if is_true "$PURGE_CACHE" ; then
   fi
 fi
 
+if is_true "$PURGE_CACHE"; then
+  echo "Phase 1: Fetching sitemap => Phase 2: Purging cache => Phase 3: Crawling pages"
+else
+  echo "Phase 1: Fetching sitemap => (SKIPPING) Phase 2: Purging cache => Phase 3: Crawling pages"
+fi
 
 # Phase 1: Collect all sitemaps and URLs
 echo "Phase 1: Collecting all sitemaps and URLs"
@@ -145,7 +149,7 @@ if is_true "$PURGE_CACHE" ; then
     -H "Content-Type: application/json" \
     --data '{"purge_everything":true}'
 else
-  echo "Phase 2: Cache purge (Skipping...)"
+  echo "(SKIPPING) Phase 2: Cache purge"
 fi
 
 # Phase 3: Crawl all collected URLs
