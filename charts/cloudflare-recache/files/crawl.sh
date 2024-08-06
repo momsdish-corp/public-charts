@@ -42,7 +42,7 @@ crawl_url() {
 
     echo "Status: $HTTP_CODE, Cf-Cache-Status: $CF_CACHE_STATUS, Time: ${TIME_TOTAL}s"
 
-    echo "$CF_CACHE_STATUS" >> "$TEMP_URL_FILE_CF_CACHE_STATUS"
+    echo "$CF_CACHE_STATUS" >> "$CF_CACHE_STATUS_TEMP_FILE"
 
     if [[ "$HTTP_CODE" != "200" ]]; then
         echo "Warning: Non-200 status code for $url"
@@ -69,7 +69,7 @@ collect_sitemaps() {
             echo "No URLs found in sitemap $sitemap_url"
             return
         fi
-        echo "$URLS" >> "$TEMP_URL_FILE"
+        echo "$URLS" >> "$URLS_TEMP_FILE"
     else
         echo "Unrecognized sitemap format for $sitemap_url"
     fi
@@ -97,8 +97,8 @@ print_usage() {
 WAIT_TIME=1
 WAIT_BEFORE_EXIT=1
 PURGE_CACHE=0
-TEMP_URL_FILE=$(mktemp)
-TEMP_URL_FILE_CF_CACHE_STATUS=$(mktemp)
+URLS_TEMP_FILE=$(mktemp)
+CF_CACHE_STATUS_TEMP_FILE=$(mktemp)
 
 # Arguments handling
 while (( ${#} > 0 )); do
@@ -167,7 +167,7 @@ fi
 
 # Phase 3: Crawl all collected URLs
 echo "Phase 3: Crawling all collected URLs with a $WAIT_TIME second wait time"
-TOTAL_URLS=$(wc -l < "$TEMP_URL_FILE" | tr -d ' ')
+TOTAL_URLS=$(wc -l < "$URLS_TEMP_FILE" | tr -d ' ')
 CURRENT_URL=0
 
 # Require URLs
@@ -180,38 +180,35 @@ while IFS= read -r url; do
     echo "${CURRENT_URL}/${TOTAL_URLS}) Crawling $url"
     crawl_url "$url"
     sleep "$WAIT_TIME"
-done < "$TEMP_URL_FILE"
+done < "$URLS_TEMP_FILE"
 
 # Results
 echo ""
 echo "Cf-Cache-Status:"
 
-CF_CACHE_STATUS_TOTAL="$(cat "$TEMP_URL_FILE_CF_CACHE_STATUS")"
-echo "$CF_CACHE_STATUS_TOTAL" | sort | uniq -c | sort -rn | while read count status; do
+TOTAL_CF_CACHE_STATUS=$(wc -l < "$CF_CACHE_STATUS_TEMP_FILE" | tr -d ' ')
+CF_CACHE_STATUS_LOGS="$(cat "$CF_CACHE_STATUS_TEMP_FILE")"
+echo "$CF_CACHE_STATUS_LOGS" | sort | uniq -c | sort -rn | while read count status; do
     echo "$status: $count"
 done
 
-# Calculate HIT and MISS counts
-HIT=$(echo "$CF_CACHE_STATUS_TOTAL" | grep -c "HIT" || true)
-MISS=$(echo "$CF_CACHE_STATUS_TOTAL" | grep -c "MISS" || true)
-
-# Ensure HIT and MISS are numeric
+# Count the HIT records
+HIT_CF_CACHE_STATUS=$(echo "$CF_CACHE_STATUS_LOGS" | grep -c "HIT" || true)
 HIT=${HIT:-0}
-MISS=${MISS:-0}
 
 # Calculate late crawls (Where a user triggered the page before the crawl was able to get to it)
 echo ""
 echo "Late crawls:"
-if [ $((HIT + MISS)) -ne 0 ]; then
-    HIT_PERCENTAGE=$(awk "BEGIN {printf \"%.2f\", 100 / ($HIT + $MISS) * $HIT}")
+if [ $((HIT_CF_CACHE_STATUS + TOTAL_CF_CACHE_STATUS)) -ne 0 ]; then
+    HIT_PERCENTAGE=$(awk "BEGIN {printf \"%.2f\", 100 / $TOTAL_CF_CACHE_STATUS * $HIT_CF_CACHE_STATUS}")
     echo "$HIT_PERCENTAGE%"
 else
     echo "Undefined"
 fi
 
 # Clean up
-rm -f "$TEMP_URL_FILE"
-rm -f "$TEMP_URL_FILE_CF_CACHE_STATUS"
+rm -f "$URLS_TEMP_FILE"
+rm -f "$CF_CACHE_STATUS_TEMP_FILE"
 
 show_timer
 echo ""
