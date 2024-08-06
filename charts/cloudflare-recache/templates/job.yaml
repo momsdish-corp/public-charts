@@ -16,6 +16,9 @@ spec:
       containers:
         - name: htmlq
           image: ghcr.io/momsdish-corp/public-containers:htmlq-0.4.0
+          envFrom:
+            - secretRef:
+                name: {{ .Release.Name }}-env-secret
           volumeMounts:
             - name: {{ .Release.Name }}-files-cm
               mountPath: "/usr/local/bin/crawl.sh"
@@ -25,6 +28,7 @@ spec:
           args:
             - --sitemap={{ .Values.sitemap }}
             - --wait={{ .Values.wait }}
+            {{- if .Values.flushCache }}- --flush-cache{{- end }}
       restartPolicy: Never
       volumes:
         - name: {{ .Release.Name }}-files-cm

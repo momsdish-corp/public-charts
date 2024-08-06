@@ -33,8 +33,7 @@ exit_message() {
 
 crawl_url() {
     local url="$1"
-    RESPONSE=$(curl -s -w --insecure "\n---BEGIN WRITE-OUT---\nHTTP_CODE:%{http_code}\nTIME_TOTAL:%{time_total}\nSIZE_DOWNLOAD:%{size_download}\n" "$url")
-    BODY=$(echo "$RESPONSE" | sed -n '1,/---BEGIN WRITE-OUT---/p' | sed '$d')
+    RESPONSE=$(curl -s -w "\n---BEGIN WRITE-OUT---\nHTTP_CODE:%{http_code}\nTIME_TOTAL:%{time_total}\nSIZE_DOWNLOAD:%{size_download}\n" --insecure "$url")
     WRITE_OUT=$(echo "$RESPONSE" | sed -n '/---BEGIN WRITE-OUT---/,$p' | tail -n +2)
 
     HTTP_CODE=$(echo "$WRITE_OUT" | grep HTTP_CODE | cut -d':' -f2)
@@ -83,9 +82,10 @@ print_usage() {
   echo "Description:"
   echo "This script crawls URLs from a sitemap, including nested sitemaps."
   echo
-  echo "Usage: $(dirname "$0")/$(basename "$0") --sitemap=\"https://example.com/sitemap.xml\" [--wait=1]"
+  echo "Usage: $(dirname "$0")/$(basename "$0") --sitemap=\"https://example.com/sitemap.xml\" [--wait=1] [--flush-cache]"
   echo "--sitemap            (string) (required) URL of the sitemap to crawl."
   echo "--wait               (number) (optional) Time to wait between crawls in seconds. Default is 1 second."
+  echo "--flush-cache        (bool)   (optional) Whether to flush Cloudflare cache. Requires CLOUDFLARE_ZONE_ID nad CLOUDFLARE_API_KEY env vars."
   echo "--waitBeforeExit     (number) (optional) Wait time in seconds before exiting the script. Default is 1 second."
   echo "--debug                       (optional) Show debug/verbose output"
   echo "--help                                   Help"
@@ -94,6 +94,7 @@ print_usage() {
 # Set defaults
 WAIT_TIME=1
 WAIT_BEFORE_EXIT=1
+FLUSH_CACHE=0
 TEMP_URL_FILE=$(mktemp)
 
 # Arguments handling
@@ -101,6 +102,7 @@ while (( ${#} > 0 )); do
   case "${1}" in
     ( '--sitemap='* ) SITEMAP_URL="${1#*=}" ;;
     ( '--wait='* ) WAIT_TIME="${1#*=}" ;;
+    ( '--flush-cache' ) FLUSH_CACHE=1 ;;
     ( '--waitBeforeExit='* ) WAIT_BEFORE_EXIT="${1#*=}" ;;
     ( '--debug' ) DEBUG=1 ;;
     ( '--help' ) print_usage; exit 0 ;;
@@ -120,12 +122,34 @@ if [[ -z "$SITEMAP_URL" ]]; then
   exit_message "Missing --sitemap flag. Try --help for more information."
 fi
 
+if is_true "$FLUSH_CACHE" ; then
+  exit_message "Missing --cf-zone-id flag. Try --help for more information."
+  if [[ -z "$CLOUDFLARE_ZONE_ID" ]]; then
+    exit_message "CLOUDFLARE_ZONE_ID is not defined. Try --help for more information."
+  fi
+  if [[ -z "$CLOUDFLARE_API_KEY" ]]; then
+    exit_message "CLOUDFLARE_API_KEY is not defined. Try --help for more information."
+  fi
+fi
+
+
 # Phase 1: Collect all sitemaps and URLs
 echo "Phase 1: Collecting all sitemaps and URLs"
 collect_sitemaps "$SITEMAP_URL"
 
-# Phase 2: Crawl all collected URLs
-echo "Phase 2: Crawling all collected URLs with a $WAIT_TIME second wait time"
+# Phase 2: Cloudflare purge all cache
+if is_true "$FLUSH_CACHE" ; then
+  echo "Phase 2: Cache purge"
+  curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
+    -H "Authorization: Bearer ${CLOUDFLARE_ZONE_ID}" \
+    -H "Content-Type: application/json" \
+    --data '{"purge_everything":true}'
+else
+  echo "Phase 2: Cache purge (Skipping...)"
+fi
+
+# Phase 3: Crawl all collected URLs
+echo "Phase 3: Crawling all collected URLs with a $WAIT_TIME second wait time"
 TOTAL_URLS=$(wc -l < "$TEMP_URL_FILE")
 CURRENT_URL=0
 
