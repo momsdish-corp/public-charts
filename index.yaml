@@ -3,6 +3,16 @@ entries:
   cloudflare-recache:
   - apiVersion: v2
     appVersion: 0.4.0
+    created: "2024-08-06T05:06:56.233300078Z"
+    description: A Helm chart for Kubernetes
+    digest: 4dc2c34f74543b50a2d5474e3d1a61d8dbfa2e38bcbbca9748cd4d245bbd0817
+    name: cloudflare-recache
+    type: application
+    urls:
+    - https://github.com/momsdish-corp/public-charts/releases/download/cloudflare-recache-0.2.3/cloudflare-recache-0.2.3.tgz
+    version: 0.2.3
+  - apiVersion: v2
+    appVersion: 0.4.0
     created: "2024-08-06T04:21:15.546694779Z"
     description: A Helm chart for Kubernetes
     digest: 012c6d2beb06e877458c0c538a15e64860eea6a99973c22a13a2e2fadfc425ae
@@ -670,4 +680,4 @@ entries:
     urls:
     - https://github.com/momsdish-corp/public-charts/releases/download/simple-website-tester-0.0.1/simple-website-tester-0.0.1.tgz
     version: 0.0.1
-generated: "2024-08-06T04:21:15.546833829Z"
+generated: "2024-08-06T05:06:56.233430923Z"
