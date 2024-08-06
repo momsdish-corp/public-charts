@@ -144,10 +144,20 @@ collect_sitemaps "$SITEMAP_URL"
 # Phase 2: Cloudflare purge all cache
 if is_true "$PURGE_CACHE" ; then
   echo "Phase 2: Cache purge"
-  curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
-    -H "Authorization: Bearer ${CLOUDFLARE_ZONE_ID}" \
+  RESPONSE="$(curl -X DELETE "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
+    -H "Authorization: Bearer ${CLOUDFLARE_API_KEY}" \
     -H "Content-Type: application/json" \
-    --data '{"purge_everything":true}'
+    --data '{"purge_everything":true}' \
+    -w "\n---BEGIN WRITE-OUT---\nHTTP_CODE:%{http_code}\n" \
+    -s)"
+  BODY=$(echo "$RESPONSE" | sed -n '1,/---BEGIN WRITE-OUT---/p' | sed '$d')
+  WRITE_OUT=$(echo "$RESPONSE" | sed -n '/---BEGIN WRITE-OUT---/,$p' | tail -n +2)
+  HTTP_CODE=$(echo "$WRITE_OUT" | grep HTTP_CODE | cut -d':' -f2)
+  echo "$BODY"
+  # Require status 200 to continue
+  if [[ "$HTTP_CODE" != 200 ]]; then
+    exit_message "Unable to clear Cloudflare cache!"
+  fi
 else
   echo "(SKIPPING) Phase 2: Cache purge"
 fi
