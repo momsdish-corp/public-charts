@@ -33,7 +33,7 @@ exit_message() {
 
 crawl_url() {
     local url="$1"
-    RESPONSE=$(curl -s -w "\n---BEGIN WRITE-OUT---\nHTTP_CODE:%{http_code}\nTIME_TOTAL:%{time_total}\nSIZE_DOWNLOAD:%{size_download}\n" "$url")
+    RESPONSE=$(curl -s -w --insecure "\n---BEGIN WRITE-OUT---\nHTTP_CODE:%{http_code}\nTIME_TOTAL:%{time_total}\nSIZE_DOWNLOAD:%{size_download}\n" "$url")
     BODY=$(echo "$RESPONSE" | sed -n '1,/---BEGIN WRITE-OUT---/p' | sed '$d')
     WRITE_OUT=$(echo "$RESPONSE" | sed -n '/---BEGIN WRITE-OUT---/,$p' | tail -n +2)
 
@@ -52,7 +52,7 @@ collect_sitemaps() {
     local sitemap_url="$1"
     echo "Collecting sitemap: $sitemap_url"
 
-    SITEMAP_CONTENT=$(curl -sL "$sitemap_url")
+    SITEMAP_CONTENT=$(curl -sL --insecure "$sitemap_url")
 
     # Check if it's a sitemap index
     if [[ -n "$(echo "$SITEMAP_CONTENT" | htmlq 'sitemapindex')" ]]; then
