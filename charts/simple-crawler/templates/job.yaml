@@ -1,0 +1,37 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ .Release.Name }}-job"
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name | quote }}
+    app.kubernetes.io/instance: crawler
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 60
+  template:
+    spec:
+      activeDeadlineSeconds: {{ .Values.activeDeadlineSeconds }}
+      containers:
+        - name: htmlq
+          image: ghcr.io/momsdish-corp/public-containers:htmlq-0.4.0
+          volumeMounts:
+            - name: {{ .Release.Name }}-files-cm
+              mountPath: "/usr/local/bin/crawl.sh"
+              subPath: files.crawl.sh
+              readOnly: true
+          command: [ "/usr/local/bin/crawl.sh" ]
+          args:
+            - --sitemap={{ .Values.sitemap }}
+            - --wait={{ .Values.wait }}
+      restartPolicy: Never
+      volumes:
+        - name: {{ .Release.Name }}-files-cm
+          configMap:
+            name: {{ .Release.Name }}-files-cm
+            items:
+              - key: files.crawl.sh
+                path: files.crawl.sh
+                mode: 0555
+

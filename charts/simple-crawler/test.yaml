@@ -1,0 +1,3 @@
+activeDeadlineSeconds: 60
+sitemap: http://nginx/sitemap.xml
+wait: 1
