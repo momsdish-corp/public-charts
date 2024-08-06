@@ -27,6 +27,6 @@ helm upgrade --install cloudflare-recache . \
   --values test.yaml
 
 # Show logs
-SIMPLE_CRAWLER_POD="$(kubectl --namespace=cloudflare-recache get pods -l job-name=cloudflare-recache-job -o jsonpath="{.items[0].metadata.name}")"
+CLOUDFLARE_RECACHE_POD="$(kubectl --namespace=cloudflare-recache get pods -l job-name=cloudflare-recache-job -o jsonpath="{.items[0].metadata.name}")"
 sleep 10
-kubectl --namespace=cloudflare-recache logs "$SIMPLE_CRAWLER_POD" --container=htmlq --follow
+kubectl --namespace=cloudflare-recache logs "$CLOUDFLARE_RECACHE_POD" --container=htmlq --follow
