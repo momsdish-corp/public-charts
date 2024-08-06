@@ -28,7 +28,7 @@ spec:
           args:
             - --sitemap={{ .Values.sitemap }}
             - --wait={{ .Values.wait }}
-            {{- if .Values.flushCache }}- --flush-cache{{- end }}
+            {{- if .Values.purgeCache }}- --purge-cache{{- end }}
       restartPolicy: Never
       volumes:
         - name: {{ .Release.Name }}-files-cm

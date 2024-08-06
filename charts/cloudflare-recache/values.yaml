@@ -2,9 +2,9 @@ activeDeadlineSeconds: 60
 sitemap: https://example.com/sitemap.xml
 # Seconds to wait between requests
 wait: 1
-flushCache: false
+purgeCache: false
 env: {}
 envBase64: {}
-#  # Required if flushCache=true
+#  # Required if purgeCache=true
 #  CLOUDFLARE_ZONE_ID:
 #  CLOUDFLARE_API_KEY:
