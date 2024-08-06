@@ -33,8 +33,7 @@ exit_message() {
 
 crawl_url() {
     local url="$1"
-    RESPONSE=$(curl -s -w --insecure "\n---BEGIN WRITE-OUT---\nHTTP_CODE:%{http_code}\nTIME_TOTAL:%{time_total}\nSIZE_DOWNLOAD:%{size_download}\n" "$url")
-    BODY=$(echo "$RESPONSE" | sed -n '1,/---BEGIN WRITE-OUT---/p' | sed '$d')
+    RESPONSE=$(curl -s -w "\n---BEGIN WRITE-OUT---\nHTTP_CODE:%{http_code}\nTIME_TOTAL:%{time_total}\nSIZE_DOWNLOAD:%{size_download}\n" --insecure "$url")
     WRITE_OUT=$(echo "$RESPONSE" | sed -n '/---BEGIN WRITE-OUT---/,$p' | tail -n +2)
 
     HTTP_CODE=$(echo "$WRITE_OUT" | grep HTTP_CODE | cut -d':' -f2)
